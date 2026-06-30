@@ -1,0 +1,17 @@
+{
+  "name": "drawly",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "format": "turbo run format"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  }
+}
