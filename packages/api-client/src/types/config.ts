@@ -1,0 +1,26 @@
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export type QueryParamValue = string | number | boolean | undefined | null;
+export type QueryParams = Record<string, QueryParamValue>;
+
+/** Returns the current access token, or null/undefined when unauthenticated. */
+export type AuthTokenProvider = () =>
+  string | null | undefined | Promise<string | null | undefined>;
+
+export interface ApiClientConfig {
+  /** Root API origin, unversioned (e.g. "http://localhost:8000"). */
+  baseUrl: string;
+  /** Injected per-request if provided. Lets each app own its own token storage. */
+  getToken?: AuthTokenProvider;
+  /** Called whenever a request fails with 401, after the response is parsed. */
+  onUnauthorized?: () => void;
+  /** Override for testing or non-global fetch environments. Defaults to global fetch. */
+  fetch?: typeof fetch;
+}
+
+export interface RequestOptions {
+  query?: QueryParams | undefined;
+  headers?: Record<string, string> | undefined;
+  /** Skips Authorization header injection for this request (e.g. login). */
+  skipAuth?: boolean | undefined;
+}

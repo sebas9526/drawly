@@ -1,13 +1,13 @@
 {
-  "name": "api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@drawly/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Drawly FastAPI backend. Dependencies are managed by uv (pyproject.toml), not pnpm — this package.json only lets Turborepo orchestrate the Python tooling alongside the rest of the workspace.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module"
+    "dev": "uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "uv sync --frozen",
+    "lint": "uv run ruff check . && uv run mypy .",
+    "format": "uv run black --check .",
+    "test": "uv run pytest"
+  }
 }

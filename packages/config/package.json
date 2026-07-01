@@ -1,0 +1,21 @@
+{
+  "name": "@drawly/config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    "./tailwind-preset": "./tailwind-preset.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check ."
+  },
+  "devDependencies": {
+    "@drawly/eslint-config": "workspace:*",
+    "@drawly/tsconfig": "workspace:*",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  }
+}

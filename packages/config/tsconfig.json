@@ -1,0 +1,7 @@
+{
+  "extends": "@drawly/tsconfig/base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["tailwind-preset.ts"]
+}

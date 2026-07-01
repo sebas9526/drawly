@@ -1,0 +1,24 @@
+{
+  "name": "@drawly/utils",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check ."
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@drawly/eslint-config": "workspace:*",
+    "@drawly/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  }
+}

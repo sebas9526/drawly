@@ -9,17 +9,17 @@
 
 ## Infrastructure
 
-- [ ] Docker
-- [ ] PostgreSQL
-- [ ] FastAPI
-- [ ] Next.js
-- [ ] Alembic
-- [ ] SQLModel
+- [x] Docker
+- [x] PostgreSQL
+- [x] FastAPI
+- [x] Next.js
+- [x] Alembic
+- [x] SQLModel
 
 ## Backend
 
-- [ ] Health Check
-- [ ] Base Configuration
+- [x] Health Check
+- [x] Base Configuration
 - [ ] Organization Module
 - [ ] Raffles Module
 - [ ] Participants Module
@@ -43,6 +43,6 @@
 
 ## Deployment
 
-- [ ] Docker Compose
-- [ ] CI/CD
+- [x] Docker Compose
+- [x] CI/CD (lint/typecheck/test/build pipeline)
 - [ ] Production

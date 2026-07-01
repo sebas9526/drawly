@@ -1,0 +1,14 @@
+pnpm-lock.yaml
+.next/
+dist/
+build/
+.turbo/
+coverage/
+node_modules/
+**/*.py
+apps/api/.venv/
+apps/api/alembic/versions/*.py
+
+# Pre-existing project documentation — content, not code; left as-is.
+*.md
+docs/**/*.md

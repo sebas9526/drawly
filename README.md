@@ -66,7 +66,7 @@ drawly/
 │
 ├── docs/
 │
-├── docker/
+├── docker-compose.yml
 │
 └── .github/
 ```
@@ -102,6 +102,56 @@ drawly/
 
 - Docker
 - Docker Compose
+
+---
+
+# 🚀 Getting Started
+
+## Prerequisites
+
+- [pnpm](https://pnpm.io) (version pinned in `package.json#packageManager`)
+- [uv](https://docs.astral.sh/uv/) for the Python backend
+- [Docker](https://www.docker.com/) + Docker Compose for the full local stack
+
+## Option A — Docker Compose (recommended)
+
+```bash
+cp .env.example .env
+docker compose up -d
+```
+
+- Web: http://localhost:3000
+- API: http://localhost:8000 (health check at `/health`)
+- pgAdmin: http://localhost:5050
+
+## Option B — Run apps directly
+
+```bash
+pnpm install
+pnpm dev             # runs apps/web via Turborepo
+
+cd apps/api
+uv sync
+cp .env.example .env # point DATABASE_URL at a running Postgres
+uv run uvicorn app.main:app --reload
+```
+
+## Common commands
+
+```bash
+pnpm lint            # eslint across web + shared packages
+pnpm typecheck        # tsc --noEmit across web + shared packages
+pnpm format:check     # prettier --check .
+pnpm test             # vitest (web) + pytest (api)
+
+cd apps/api
+uv run ruff check .   # lint
+uv run black --check . # format check
+uv run mypy .          # typecheck
+uv run pytest           # test
+```
+
+Conventional Commits are enforced locally via Husky + commitlint (see `docs/07-development/COMMIT_CONVENTION.md`).
 
 ---
 

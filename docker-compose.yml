@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-drawly}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-drawly}
+      POSTGRES_DB: ${POSTGRES_DB:-drawly}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-drawly} -d ${POSTGRES_DB:-drawly}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - '${PGADMIN_PORT:-5050}:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./apps/api
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-drawly}:${POSTGRES_PASSWORD:-drawly}@postgres:5432/${POSTGRES_DB:-drawly}
+      DATABASE_URL_SYNC: postgresql+psycopg://${POSTGRES_USER:-drawly}:${POSTGRES_PASSWORD:-drawly}@postgres:5432/${POSTGRES_DB:-drawly}
+    ports:
+      - '${API_PORT:-8000}:8000'
+    volumes:
+      - ./apps/api:/app
+      - api_venv:/app/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-8000}
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - web_node_modules:/app/node_modules
+      # pnpm gives every workspace package its own node_modules (bin symlinks
+      # into the root store); bind-mounting source over each package would
+      # otherwise shadow those with the host's (incompatible) symlinks.
+      - web_app_node_modules:/app/apps/web/node_modules
+      - web_next_cache:/app/apps/web/.next
+      - web_api_client_node_modules:/app/packages/api-client/node_modules
+      - web_config_node_modules:/app/packages/config/node_modules
+      - web_constants_node_modules:/app/packages/constants/node_modules
+      - web_eslint_config_node_modules:/app/packages/eslint-config/node_modules
+      - web_types_node_modules:/app/packages/types/node_modules
+      - web_ui_node_modules:/app/packages/ui/node_modules
+      - web_utils_node_modules:/app/packages/utils/node_modules
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  api_venv:
+  web_node_modules:
+  web_app_node_modules:
+  web_next_cache:
+  web_api_client_node_modules:
+  web_config_node_modules:
+  web_constants_node_modules:
+  web_eslint_config_node_modules:
+  web_types_node_modules:
+  web_ui_node_modules:
+  web_utils_node_modules:

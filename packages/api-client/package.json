@@ -1,0 +1,27 @@
+{
+  "name": "@drawly/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Framework-agnostic HTTP client for the Drawly API. Native fetch, fully typed, no React/Next.js dependency — safe to reuse from a future React Native app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@drawly/constants": "workspace:*",
+    "@drawly/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@drawly/eslint-config": "workspace:*",
+    "@drawly/tsconfig": "workspace:*",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
