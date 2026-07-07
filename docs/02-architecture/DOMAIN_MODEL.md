@@ -99,8 +99,14 @@ Represents a numbered ticket inside a raffle.
 - number
 - status
 - reservedAt
+- expiresAt
 - soldAt
 - winnerAt
+
+> Ticket generation is an **explicit action** (`POST /raffles/{id}/tickets`),
+> intentionally decoupled from raffle creation so the numbering/format can be
+> reconfigured before publishing. `expiresAt` records reservation expiry (set on
+> reserve); automatic release of expired reservations is future work.
 
 ### Relationships
 
@@ -122,6 +128,7 @@ Represents the customer buying one or multiple tickets.
 - fullName
 - phone
 - email
+- document
 - address
 - city
 - notes
@@ -131,7 +138,71 @@ Represents the customer buying one or multiple tickets.
 
 Participant
 
-→ owns many Tickets
+→ owns many Tickets (a ticket has zero or one participant)
+
+### Business Rules (Sprint 4)
+
+- Name and phone are required; phone is unique among active participants.
+- Delete is a soft delete and is blocked while the participant has tickets.
+- Assigning a participant to an available ticket reserves it; removing the
+  participant from a reserved ticket releases it back to available.
+
+> **Future — Customer:** this entity is intentionally shaped to grow into a
+> `Customer` (one customer across many raffles over time), where "participation"
+> becomes the customer↔ticket link. Tickets already reference the participant, so
+> the evolution is additive rather than a rewrite. The MVP keeps the name
+> `Participant`.
+
+---
+
+## Collaborator (Sprint 7)
+
+A sales collaborator (seller) that belongs to a single raffle. A raffle has many
+collaborators; a collaborator belongs to exactly one raffle.
+
+### Attributes
+
+- name (required), phone, email, color, notes, is_active
+- owner_id (the organizer; denormalized for tenant scoping)
+- raffle_id (the raffle it belongs to)
+- user_id (**reserved, nullable** — future login link)
+
+### Relationships
+
+- Raffle 1—N Collaborator.
+- Collaborator 0—N Ticket (via `tickets.collaborator_id`, nullable): a reserved
+  or paid ticket may credit the collaborator who sold it. Available tickets have
+  none.
+
+### Business Rules (Sprint 7)
+
+- A collaborator can only be created on a raffle the caller owns.
+- Everything is owner-scoped: a user never sees another user's collaborators,
+  and a ticket can only be credited to a collaborator of its own raffle/owner.
+- Crediting a collaborator is optional (both admin and public reservation).
+- Delete is a soft delete; tickets already sold keep the historical credit.
+
+> **Future — Collaborator as User:** the `user_id` column is reserved so a
+> collaborator can later be linked to a platform `User` and log in to see only
+> their own sales:
+> `User (Owner) → Raffle → Collaborator → Tickets`. The evolution is additive
+> (populate `user_id`), not a schema rewrite.
+
+---
+
+## Analytics & Reports (Sprint 9)
+
+Not a domain entity — a **read model**. `modules/analytics` owns no table and
+introduces no new business rule; it aggregates the existing Raffle/Ticket/
+Participant/Collaborator data into reporting projections (executive dashboard,
+per-raffle/collaborator/participant reports, global top-N rankings and time
+series) and exports them as Excel/PDF. Deliberately independent from
+`modules/dashboard` (Sprint 5) so the two read models can evolve separately;
+neither imports the other.
+
+`received_revenue` reads as "money collected" but is derived from
+`Ticket.status = PAID`, not a real transaction — it is the explicit seat left
+for the future Payment entity (see below) to populate once it exists.
 
 ---
 

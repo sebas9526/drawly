@@ -1,6 +1,7 @@
 # --- Node / pnpm / Turborepo ---
 node_modules/
 .pnpm-store/
+_tmp_*
 .turbo/
 dist/
 build/
@@ -13,6 +14,7 @@ out/
 __pycache__/
 *.py[cod]
 .venv/
+.venv*/
 venv/
 .uv/
 *.egg-info/
@@ -48,3 +50,6 @@ docker-compose.override.yml
 .idea/
 .DS_Store
 Thumbs.db
+
+# stray sandbox test file (cannot be deleted from mount)
+_deltest.txt

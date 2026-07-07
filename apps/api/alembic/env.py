@@ -7,7 +7,11 @@ from alembic import context
 from app.core.config import get_settings
 
 # Import every module's models here so Alembic's autogenerate can see them.
-# e.g. from app.modules.raffles.models import Raffle  # noqa: F401
+from app.modules.collaborators.models import Collaborator  # noqa: E402, F401
+from app.modules.participants.models import Participant  # noqa: E402, F401
+from app.modules.raffles.models import Raffle  # noqa: E402, F401
+from app.modules.tickets.models import Ticket  # noqa: E402, F401
+from app.modules.users.models import User  # noqa: E402, F401
 
 config = context.config
 

@@ -1,0 +1,9 @@
+import re
+
+# Pragmatic, country-agnostic email check. Avoids adding the email-validator
+# dependency; the frontend (Zod) and this guard both keep bad input out.
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def is_valid_email(value: str) -> bool:
+    return bool(_EMAIL_RE.match(value))

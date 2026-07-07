@@ -1,0 +1,73 @@
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.modules.raffles.models import Raffle, RaffleStatus
+
+
+class RaffleCreate(BaseModel):
+    """Request body for POST /raffles. Backend re-validates every field (never
+    trusts the client); mirrors packages/api-client CreateRaffleRequest."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=150)
+    description: str = Field(default="", max_length=5000)
+    prize: str = Field(default="", max_length=2000)
+    ticket_price: Decimal = Field(default=Decimal("0"), ge=0)
+    total_tickets: int = Field(ge=1, le=100_000)
+    draw_date: datetime
+
+
+class RaffleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, min_length=1, max_length=150)
+    description: str | None = Field(default=None, max_length=5000)
+    prize: str | None = Field(default=None, max_length=2000)
+    ticket_price: Decimal | None = Field(default=None, ge=0)
+    total_tickets: int | None = Field(default=None, ge=1, le=100_000)
+    draw_date: datetime | None = None
+
+
+class RaffleRead(BaseModel):
+    id: uuid.UUID
+    organization_id: uuid.UUID | None
+    title: str
+    description: str
+    prize: str
+    cover_image: str | None
+    ticket_price: float
+    total_tickets: int
+    draw_date: datetime
+    status: RaffleStatus
+    public_slug: str
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def from_entity(cls, raffle: Raffle) -> "RaffleRead":
+        return cls(
+            id=raffle.id,
+            organization_id=raffle.organization_id,
+            title=raffle.title,
+            description=raffle.description,
+            prize=raffle.prize,
+            cover_image=raffle.cover_image,
+            ticket_price=float(raffle.ticket_price),
+            total_tickets=raffle.total_tickets,
+            draw_date=raffle.draw_date,
+            status=raffle.status,
+            public_slug=raffle.public_slug,
+            created_at=raffle.created_at,
+            updated_at=raffle.updated_at,
+        )
+
+
+class GenerateTicketsResult(BaseModel):
+    """Response for the explicit ticket-generation action."""
+
+    raffle_id: uuid.UUID
+    generated: int

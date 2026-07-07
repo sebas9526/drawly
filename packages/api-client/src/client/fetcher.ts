@@ -1,4 +1,5 @@
 import type { ApiClientConfig, RequestOptions } from '../types/config';
+import { ApiError } from './errors';
 import { rawRequest } from './http';
 import { parseApiResponse, parsePaginatedResponse, type PaginatedResult } from './response';
 
@@ -36,6 +37,17 @@ export class ApiClient {
   ): Promise<PaginatedResult<TItem>> {
     const response = await rawRequest(this.config, { method: 'GET', path, options });
     return this.withUnauthorizedHandling(response, () => parsePaginatedResponse<TItem>(response));
+  }
+
+  /** For endpoints that return a raw file (e.g. Excel/PDF exports) instead of
+   * the `{success, data}` envelope. */
+  async getBlob(path: string, options?: RequestOptions): Promise<Blob> {
+    const response = await rawRequest(this.config, { method: 'GET', path, options });
+    if (!response.ok) {
+      if (response.status === 401) this.config.onUnauthorized?.();
+      throw new ApiError(`Failed to download ${path}.`, response.status);
+    }
+    return response.blob();
   }
 
   private async send<TData>(

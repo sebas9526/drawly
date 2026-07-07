@@ -35,6 +35,13 @@ services:
       context: ./apps/api
       target: dev
     restart: unless-stopped
+    # Runs `alembic upgrade head` (via the bind-mounted script) before uvicorn,
+    # so the schema is provisioned automatically even without rebuilding the image.
+    entrypoint: ['/bin/sh', '/app/docker-entrypoint.sh']
+    # No --reload in the container: uvicorn's file watcher (watchfiles) is
+    # unreliable over Docker's macOS bind mount and can make the process exit,
+    # crash-looping the container. Restart manually (or rebuild) to pick up changes.
+    command: ['uv', 'run', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', '8000']
     env_file:
       - .env
     environment:

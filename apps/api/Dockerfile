@@ -10,20 +10,26 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 # ---- Dependencies layer (cached unless pyproject.toml/uv.lock change) ----
+# Non-frozen so a newly added dependency resolves during build without
+# regenerating uv.lock on the host first.
 FROM base AS deps
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project
+RUN uv sync --no-install-project
 
 # ---- Development image: source is bind-mounted by docker-compose ----
 FROM deps AS dev
 COPY . .
-RUN uv sync --frozen
+RUN uv sync
 EXPOSE 8000
+# Entrypoint runs `alembic upgrade head` before the CMD, so the schema is
+# provisioned automatically on `docker compose up`.
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]
 CMD ["uv", "run", "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 
 # ---- Production image ----
 FROM deps AS production
 COPY . .
-RUN uv sync --frozen --no-dev
+RUN uv sync --no-dev
 EXPOSE 8000
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

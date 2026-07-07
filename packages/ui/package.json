@@ -14,7 +14,8 @@
     "format": "prettier --check ."
   },
   "dependencies": {
-    "@drawly/utils": "workspace:*"
+    "@drawly/utils": "workspace:*",
+    "lucide-react": "^0.468.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",

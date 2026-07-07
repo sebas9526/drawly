@@ -1,125 +1,71 @@
 # Design System
 
-Drawly Design System
+Drawly Design System — Version 2.0 (Sprint UI/UX)
 
-Version 1.0
-
----
-
-Design Principles
-
-Modern
-
-Minimal
-
-Clean
-
-Professional
-
-Accessible
-
-Responsive
-
-Fast
+Identidad visual moderna tipo SaaS (inspirada en la calidad de Linear, Vercel,
+Supabase, Stripe), con temas claro/oscuro, tokens de diseño y componentes
+reutilizables en `packages/ui`.
 
 ---
 
-Design Inspiration
+## Tokens
 
-Stripe
+Todo el estilo se consume a través de **design tokens** (variables CSS mapeadas a
+utilidades de Tailwind en `packages/config/tailwind-preset.ts`). No se permiten
+colores, tamaños, radios ni sombras hardcodeados.
 
-Linear
+- **Paletas** (RGB, 50–900, independientes del tema): `primary` (Indigo/Violet),
+  `success` (Emerald), `warning` (Amber), `danger` (Red), `info` (Sky),
+  `neutral` (Slate).
+- **Tokens semánticos** (cambian entre claro/oscuro): `background`, `surface`,
+  `card`, `muted`, `border`, `border-strong`, `text-primary`, `text-secondary`,
+  `text-muted`, `primary` / `primary-hover` / `primary-fg`, `ring`.
 
-Vercel
+Definidos en `apps/web/src/app/globals.css` (`:root` = claro, `.dark` = oscuro).
 
-Notion
+## Temas
 
-Supabase
+Claro y oscuro con interruptor (`ThemeToggle`). La preferencia se persiste en
+`localStorage` y respeta `prefers-color-scheme`. Un script inline aplica el tema
+antes de la hidratación para evitar parpadeo. Todos los componentes soportan
+ambos temas porque consumen tokens semánticos.
 
----
+## Tipografía
 
-Border Radius
+Fuente **Inter** (`next/font`). Escala basada en utilidades de Tailwind:
+`text-2xl`/`text-xl` (títulos), `text-sm`/`text-base` (cuerpo), `text-xs`
+(captions), con pesos `font-medium`/`font-semibold`.
 
-12px
+## Espaciado
 
----
+Múltiplos de 4px (escala por defecto de Tailwind): 4, 8, 12, 16, 20, 24, 32, 40,
+48, 64. No usar valores arbitrarios.
 
-Spacing Scale
+## Bordes (radios)
 
-4
+`xs` .25rem · `sm` .375rem · `md` .5rem · `lg` .75rem · `xl` 1rem · `2xl` 1.25rem.
 
-8
+## Sombras
 
-12
+`shadow-sm` · `shadow-md` · `shadow-lg` · `shadow-xl` (escala en el preset).
 
-16
+## Animaciones
 
-24
+Sutiles y rápidas: `animate-fade-in`, `fade-in-up`, `scale-in`, `slide-in-right`
++ `animate-pulse` para skeletons. Duración base de transición: 150ms.
 
-32
+## Iconografía
 
-48
+**Lucide React** exclusivamente. No mezclar librerías de iconos.
 
-64
+## Layout administrativo
 
----
+`AppShell` (`apps/web/src/components/shell`): sidebar colapsable y persistente
+(Dashboard, Rifas, Participantes + placeholders Boletas/Pagos/Reportes/
+Configuración), topbar (logo, buscador placeholder, ThemeToggle, menú de
+usuario), breadcrumbs y área principal. Responsive (drawer en móvil).
 
-Elevation
+## Accesibilidad
 
-Level 1
-
-Cards
-
-Level 2
-
-Dialogs
-
-Level 3
-
-Dropdowns
-
----
-
-Animations
-
-150ms
-
-200ms
-
-250ms
-
-Use CSS transitions whenever possible.
-
-Avoid unnecessary animations.
-
----
-
-Icons
-
-Lucide React
-
----
-
-Illustrations
-
-Flat style
-
-Simple
-
-Minimal
-
-No skeuomorphism
-
----
-
-Accessibility
-
-WCAG AA
-
-Keyboard Navigation
-
-Visible Focus
-
-Screen Reader Support
-
-Color Contrast
+WCAG AA, focus visible global (`:focus-visible` ring), navegación por teclado,
+roles/ARIA en overlays (dialog, menu, switch, tooltip) y contraste por tokens.

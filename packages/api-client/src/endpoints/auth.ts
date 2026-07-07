@@ -1,19 +1,26 @@
 import { API_V1_PREFIX } from '@drawly/constants';
 
 import type { ApiClient } from '../client/fetcher';
-import type { LoginRequest, LoginResult, RefreshTokenRequest } from '../dto/auth';
+import type { AuthUser, LoginRequest, RegisterRequest } from '../dto/auth';
 
 const BASE_PATH = `${API_V1_PREFIX}/auth`;
 
-/** PROVISIONAL — see the note in ../dto/auth.ts. */
+/**
+ * Cookie-based auth endpoints. The API sets/clears an httpOnly session cookie;
+ * the client only ever sees the `AuthUser`. `skipAuth` is irrelevant now that
+ * the session travels as a cookie, but register/login stay explicit as the
+ * public (pre-session) surface.
+ */
 export function createAuthEndpoints(client: ApiClient) {
   return {
-    login: (payload: LoginRequest): Promise<LoginResult> =>
-      client.post<LoginResult>(`${BASE_PATH}/login`, payload, { skipAuth: true }),
+    register: (payload: RegisterRequest): Promise<AuthUser> =>
+      client.post<AuthUser>(`${BASE_PATH}/register`, payload),
 
-    refresh: (payload: RefreshTokenRequest): Promise<LoginResult> =>
-      client.post<LoginResult>(`${BASE_PATH}/refresh`, payload, { skipAuth: true }),
+    login: (payload: LoginRequest): Promise<AuthUser> =>
+      client.post<AuthUser>(`${BASE_PATH}/login`, payload),
 
     logout: (): Promise<void> => client.post<void>(`${BASE_PATH}/logout`),
+
+    me: (): Promise<AuthUser> => client.get<AuthUser>(`${BASE_PATH}/me`),
   };
 }

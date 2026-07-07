@@ -3,6 +3,7 @@ import { API_V1_PREFIX } from '@drawly/constants';
 import type { ApiClient, PaginatedResult } from '../client/fetcher';
 import type {
   CreateRaffleRequest,
+  GenerateTicketsResult,
   ListRafflesQuery,
   RaffleDto,
   SelectWinnerResult,
@@ -26,6 +27,11 @@ export function createRafflesEndpoints(client: ApiClient) {
       client.put<RaffleDto>(`${BASE_PATH}/${id}`, payload),
 
     remove: (id: string): Promise<void> => client.delete<void>(`${BASE_PATH}/${id}`),
+
+    /** Explicit ticket generation for a raffle (Sprint 3). Generates the
+     * raffle's configured `total_tickets`; fails if already generated. */
+    generateTickets: (id: string): Promise<GenerateTicketsResult> =>
+      client.post<GenerateTicketsResult>(`${BASE_PATH}/${id}/tickets`),
 
     publish: (id: string): Promise<RaffleDto> =>
       client.patch<RaffleDto>(`${BASE_PATH}/${id}/publish`),

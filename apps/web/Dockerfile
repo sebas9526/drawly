@@ -15,7 +15,14 @@ RUN turbo prune @drawly/web --docker
 # ---- Install dependencies for the pruned workspace ----
 FROM base AS installer
 COPY --from=pruner /app/out/json/ .
-RUN pnpm install --frozen-lockfile
+# --no-frozen-lockfile so adding a dependency doesn't require regenerating the
+# lockfile on the host before building (the container resolves + installs it).
+# Raise pnpm's fetch timeout/retries and cap concurrency so a slow or flaky npm
+# registry doesn't abort the build (default timeout is 60s per request).
+RUN pnpm config set fetch-timeout 600000 \
+    && pnpm config set fetch-retries 5 \
+    && pnpm config set network-concurrency 4 \
+    && pnpm install --no-frozen-lockfile
 
 # ---- Development image: source is bind-mounted by docker-compose ----
 FROM installer AS dev

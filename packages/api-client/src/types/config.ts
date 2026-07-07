@@ -16,6 +16,11 @@ export interface ApiClientConfig {
   onUnauthorized?: () => void;
   /** Override for testing or non-global fetch environments. Defaults to global fetch. */
   fetch?: typeof fetch;
+  /**
+   * fetch credentials mode. Defaults to 'include' so the httpOnly session
+   * cookie is sent on cross-origin requests (web <-> api on different ports).
+   */
+  credentials?: RequestCredentials;
 }
 
 export interface RequestOptions {

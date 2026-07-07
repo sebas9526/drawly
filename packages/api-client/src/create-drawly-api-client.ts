@@ -1,5 +1,7 @@
 import { ApiClient } from './client/fetcher';
+import { createAnalyticsEndpoints } from './endpoints/analytics';
 import { createAuthEndpoints } from './endpoints/auth';
+import { createCollaboratorsEndpoints } from './endpoints/collaborators';
 import { createDashboardEndpoints } from './endpoints/dashboard';
 import { createHealthEndpoints } from './endpoints/health';
 import { createOrganizationsEndpoints } from './endpoints/organizations';
@@ -18,7 +20,9 @@ export function createDrawlyApiClient(config: ApiClientConfig) {
   const client = new ApiClient(config);
 
   return {
+    analytics: createAnalyticsEndpoints(client),
     auth: createAuthEndpoints(client),
+    collaborators: createCollaboratorsEndpoints(client),
     dashboard: createDashboardEndpoints(client),
     health: createHealthEndpoints(client),
     organizations: createOrganizationsEndpoints(client),

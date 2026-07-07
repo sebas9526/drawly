@@ -31,6 +31,8 @@ export async function rawRequest(
     return await fetchImpl(url, {
       method,
       headers,
+      // Send the httpOnly session cookie on cross-origin requests.
+      credentials: config.credentials ?? 'include',
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch (cause) {

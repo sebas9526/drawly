@@ -39,13 +39,19 @@ export interface ListRafflesQuery {
   [key: string]: string | number | boolean | undefined | null;
   page?: number;
   page_size?: number;
-  search?: string;
-  status?: RaffleStatus;
-  sort?: string;
+  search?: string | undefined;
+  status?: RaffleStatus | undefined;
+  sort?: string | undefined;
 }
 
 export interface SelectWinnerResult {
   ticket: number;
   participant: ParticipantDto;
   winner_date: string;
+}
+
+/** Result of the explicit ticket-generation action (POST /raffles/{id}/tickets). */
+export interface GenerateTicketsResult {
+  raffle_id: string;
+  generated: number;
 }
