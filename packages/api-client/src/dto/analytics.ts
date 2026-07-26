@@ -115,4 +115,14 @@ export interface AnalyticsRafflesQuery extends AnalyticsFiltersQuery {
   page_size?: number;
 }
 
+export interface AnalyticsCollaboratorsQuery extends AnalyticsFiltersQuery {
+  page?: number;
+  page_size?: number;
+}
+
+export interface AnalyticsParticipantsQuery extends AnalyticsFiltersQuery {
+  page?: number;
+  page_size?: number;
+}
+
 export type AnalyticsExportFormat = 'excel' | 'pdf';

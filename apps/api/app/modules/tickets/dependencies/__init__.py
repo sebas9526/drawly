@@ -4,6 +4,7 @@ from .ticket_dependencies import (
     get_public_tickets,
     get_ticket_provisioning,
     get_ticket_use_cases,
+    sweep_expired_reservations,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "get_public_tickets",
     "get_ticket_provisioning",
     "get_ticket_use_cases",
+    "sweep_expired_reservations",
 ]

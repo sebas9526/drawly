@@ -180,22 +180,28 @@ async def get_raffle_detail(
 # ----------------------------------------------------------------------
 
 
-@router.get("/collaborators", response_model=SuccessResponse[list[CollaboratorReportRow]])
+@router.get("/collaborators", response_model=PaginatedResponse[CollaboratorReportRow])
 async def list_collaborators(
     use_cases: AnalyticsUseCasesDep,
     start_date: Annotated[date | None, Query()] = None,
     end_date: Annotated[date | None, Query()] = None,
     raffle_id: Annotated[uuid.UUID | None, Query()] = None,
     collaborator_id: Annotated[uuid.UUID | None, Query()] = None,
-) -> SuccessResponse[list[CollaboratorReportRow]]:
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PaginatedResponse[CollaboratorReportRow]:
     filters = _filters(
         start_date=start_date,
         end_date=end_date,
         raffle_id=raffle_id,
         collaborator_id=collaborator_id,
     )
-    rows = await use_cases.list_collaborators(filters)
-    return SuccessResponse(message="Collaborator report.", data=rows)
+    rows, total = await use_cases.list_collaborators(
+        filters, offset=offset_for(page, page_size), limit=page_size
+    )
+    return PaginatedResponse(
+        data=rows, pagination=build_pagination_meta(page=page, page_size=page_size, total=total)
+    )
 
 
 @router.get("/collaborators/export")
@@ -222,22 +228,28 @@ async def export_collaborators(
 # ----------------------------------------------------------------------
 
 
-@router.get("/participants", response_model=SuccessResponse[list[ParticipantReportRow]])
+@router.get("/participants", response_model=PaginatedResponse[ParticipantReportRow])
 async def list_participants(
     use_cases: AnalyticsUseCasesDep,
     start_date: Annotated[date | None, Query()] = None,
     end_date: Annotated[date | None, Query()] = None,
     raffle_id: Annotated[uuid.UUID | None, Query()] = None,
     collaborator_id: Annotated[uuid.UUID | None, Query()] = None,
-) -> SuccessResponse[list[ParticipantReportRow]]:
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PaginatedResponse[ParticipantReportRow]:
     filters = _filters(
         start_date=start_date,
         end_date=end_date,
         raffle_id=raffle_id,
         collaborator_id=collaborator_id,
     )
-    rows = await use_cases.list_participants(filters)
-    return SuccessResponse(message="Participant report.", data=rows)
+    rows, total = await use_cases.list_participants(
+        filters, offset=offset_for(page, page_size), limit=page_size
+    )
+    return PaginatedResponse(
+        data=rows, pagination=build_pagination_meta(page=page, page_size=page_size, total=total)
+    )
 
 
 @router.get("/participants/export")

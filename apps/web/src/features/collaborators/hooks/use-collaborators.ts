@@ -3,6 +3,7 @@ import type {
   ListCollaboratorsQuery,
   UpdateCollaboratorRequest,
 } from '@drawly/api-client';
+import { fetchAllPages } from '@drawly/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@drawly/constants';
@@ -12,12 +13,15 @@ import { api } from '@/lib/api';
 export function useCollaborators(
   filters: { raffleId?: string | undefined; search?: string | undefined } = {},
 ) {
-  const query: ListCollaboratorsQuery = { page_size: 100 };
+  const query: ListCollaboratorsQuery = {};
   if (filters.raffleId) query.raffle_id = filters.raffleId;
   if (filters.search) query.search = filters.search;
   return useQuery({
     queryKey: QUERY_KEYS.collaborators(filters.raffleId, filters.search),
-    queryFn: () => api.collaborators.getAll(query),
+    queryFn: () =>
+      fetchAllPages((page, pageSize) =>
+        api.collaborators.getAll({ ...query, page, page_size: pageSize }),
+      ),
   });
 }
 
@@ -39,7 +43,8 @@ export function useCollaboratorStats(raffleId: string) {
 
 function useCollaboratorsInvalidator() {
   const queryClient = useQueryClient();
-  return (): Promise<void> => queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+  return (): Promise<void> =>
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.collaboratorsAll });
 }
 
 export function useCreateCollaborator() {

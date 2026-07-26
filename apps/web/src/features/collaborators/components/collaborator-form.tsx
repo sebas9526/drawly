@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type CollaboratorDto } from '@drawly/api-client';
+import { getApiErrorMessage, type CollaboratorDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { Field } from '@drawly/ui/Field';
@@ -107,7 +107,7 @@ export function CollaboratorForm({
       <Field label="Rifa" htmlFor="raffle_id" error={errors.raffle_id?.message}>
         <Select id="raffle_id" disabled={isEditing} {...register('raffle_id')}>
           <option value="">Selecciona una rifa</option>
-          {(raffles?.data ?? []).map((raffle) => (
+          {(raffles ?? []).map((raffle) => (
             <option key={raffle.id} value={raffle.id}>
               {raffle.title}
             </option>
@@ -181,7 +181,7 @@ export function CollaboratorForm({
 
       {mutationError != null && (
         <Alert tone="danger">
-          {isApiError(mutationError) ? mutationError.message : 'No se pudo guardar el colaborador.'}
+          {getApiErrorMessage(mutationError, 'No se pudo guardar el colaborador.')}
         </Alert>
       )}
 

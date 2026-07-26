@@ -121,17 +121,33 @@ class AnalyticsUseCases:
             top_participants=self._service.ranking(top_participants),
         )
 
-    async def list_collaborators(self, filters: AnalyticsFilters) -> list[CollaboratorReportRow]:
+    async def _all_collaborator_rows(
+        self, filters: AnalyticsFilters
+    ) -> list[CollaboratorReportRow]:
+        """Full, ranked collaborator report — rank depends on the complete
+        ordered set, so it must be computed before any pagination slice."""
         rows = await self._repository.collaborators_report_rows(self._owner_id, filters)
         served = await self._repository.participants_served_by_collaborator(self._owner_id, filters)
         raffle_ids = {row[2] for row in rows}
         raffle_totals = await self._repository.raffle_total_tickets(self._owner_id, raffle_ids)
         return self._service.collaborator_report_rows(rows, served, raffle_totals)
 
-    async def list_participants(self, filters: AnalyticsFilters) -> list[ParticipantReportRow]:
+    async def list_collaborators(
+        self, filters: AnalyticsFilters, *, offset: int, limit: int
+    ) -> tuple[list[CollaboratorReportRow], int]:
+        all_rows = await self._all_collaborator_rows(filters)
+        return all_rows[offset : offset + limit], len(all_rows)
+
+    async def _all_participant_rows(self, filters: AnalyticsFilters) -> list[ParticipantReportRow]:
         rows = await self._repository.participants_report_rows(self._owner_id, filters)
         raffles_count = await self._repository.raffles_count_by_participant(self._owner_id, filters)
         return self._service.participant_report_rows(rows, raffles_count)
+
+    async def list_participants(
+        self, filters: AnalyticsFilters, *, offset: int, limit: int
+    ) -> tuple[list[ParticipantReportRow], int]:
+        all_rows = await self._all_participant_rows(filters)
+        return all_rows[offset : offset + limit], len(all_rows)
 
     async def get_global_reports(self, filters: AnalyticsFilters) -> GlobalReports:
         top_collaborators = await self._repository.top_collaborators_global(
@@ -205,7 +221,7 @@ class AnalyticsUseCases:
     async def export_collaborators_rows(
         self, filters: AnalyticsFilters
     ) -> tuple[str, list[str], list[list[Any]]]:
-        rows = await self.list_collaborators(filters)
+        rows = await self._all_collaborator_rows(filters)
         field_keys = [
             "rank",
             "name",
@@ -225,7 +241,7 @@ class AnalyticsUseCases:
     async def export_participants_rows(
         self, filters: AnalyticsFilters
     ) -> tuple[str, list[str], list[list[Any]]]:
-        rows = await self.list_participants(filters)
+        rows = await self._all_participant_rows(filters)
         field_keys = [
             "full_name",
             "purchases_count",

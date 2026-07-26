@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,14 +65,15 @@ class TicketRepository:
         result = await self._session.execute(statement)
         return result.scalars().first()
 
-    async def list_by_raffle(self, raffle_id: uuid.UUID) -> list[Ticket]:
-        statement = (
-            select(Ticket)
-            .where(Ticket.raffle_id == raffle_id, col(Ticket.deleted_at).is_(None))
-            .order_by(col(Ticket.number).asc())
+    async def list_by_raffle(
+        self, raffle_id: uuid.UUID, *, offset: int, limit: int
+    ) -> tuple[list[Ticket], int]:
+        base = select(Ticket).where(Ticket.raffle_id == raffle_id, col(Ticket.deleted_at).is_(None))
+        total = await self._session.execute(select(func.count()).select_from(base.subquery()))
+        items = await self._session.execute(
+            base.order_by(col(Ticket.number).asc()).offset(offset).limit(limit)
         )
-        result = await self._session.execute(statement)
-        return list(result.scalars().all())
+        return list(items.scalars().all()), int(total.scalar_one())
 
     async def status_counts(self, raffle_id: uuid.UUID) -> dict[TicketStatus, int]:
         statement = (
@@ -119,6 +121,28 @@ class TicketRepository:
         )
         if owner_id is not None:
             statement = statement.where(Ticket.owner_id == owner_id)
+        result = await self._session.execute(statement)
+        return list(result.scalars().all())
+
+    async def list_expired_reserved(self, *, now: datetime, limit: int = 500) -> list[Ticket]:
+        """RESERVED tickets whose TTL has elapsed, system-wide (no owner
+        scoping — expiry applies regardless of which owner's raffle a ticket
+        belongs to). Row-locked so the sweep can't race an in-flight cancel/pay.
+        Bounded by ``limit`` per run so one sweep tick can't block for too long
+        if a large backlog ever accumulates (the next tick picks up the rest).
+        """
+        statement = (
+            select(Ticket)
+            .where(
+                Ticket.status == TicketStatus.RESERVED,
+                col(Ticket.expires_at).is_not(None),
+                col(Ticket.expires_at) <= now,
+                col(Ticket.deleted_at).is_(None),
+            )
+            .order_by(col(Ticket.expires_at).asc())
+            .limit(limit)
+            .with_for_update()
+        )
         result = await self._session.execute(statement)
         return list(result.scalars().all())
 

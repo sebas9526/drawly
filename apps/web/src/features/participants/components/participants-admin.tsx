@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type ParticipantDto } from '@drawly/api-client';
+import { getApiErrorMessage, type ParticipantDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { EmptyState } from '@drawly/ui/EmptyState';
@@ -29,7 +29,7 @@ export function ParticipantsAdmin(): React.JSX.Element {
   const deleteParticipant = useDeleteParticipant();
 
   const counts = useMemo(() => {
-    const all = data?.data ?? [];
+    const all = data ?? [];
     return {
       all: all.length,
       withTickets: all.filter((p) => p.ticket_count > 0).length,
@@ -38,7 +38,7 @@ export function ParticipantsAdmin(): React.JSX.Element {
   }, [data]);
 
   const filtered = useMemo(() => {
-    const all = data?.data ?? [];
+    const all = data ?? [];
     if (statusFilter === 'with-tickets') return all.filter((p) => p.ticket_count > 0);
     if (statusFilter === 'without-tickets') return all.filter((p) => p.ticket_count === 0);
     return all;
@@ -105,7 +105,7 @@ export function ParticipantsAdmin(): React.JSX.Element {
       {isLoading && <Loader label="Cargando participantes…" />}
       {isError && (
         <Alert tone="danger" title="No pudimos cargar los participantes">
-          {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
       {data && filtered.length === 0 ? (

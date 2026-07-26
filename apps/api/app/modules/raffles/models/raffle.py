@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import Index, Numeric
 from sqlmodel import Field
 
-from app.database.base import UUIDAuditBase, status_column_type
+from app.database.base import TZ_DATETIME, UUIDAuditBase, status_column_type
 
 from .enums import RaffleStatus
 
@@ -39,7 +39,12 @@ class Raffle(UUIDAuditBase, table=True):
     # never editable afterwards — same immutability rule as total_tickets once
     # tickets exist (see RaffleUpdate, which omits this field entirely).
     starting_number: int = Field(default=1, ge=0, le=1)
-    draw_date: datetime
+    # sa_type required: without it SQLModel maps `datetime` to a naive
+    # TIMESTAMP column, which asyncpg then rejects the moment a tz-aware value
+    # (every request payload) is bound to it — invisible under the SQLite test
+    # suite (no strict tz-awareness check there), only surfaced against real
+    # Postgres. See migration 0007_raffle_draw_date_timezone.
+    draw_date: datetime = Field(sa_type=TZ_DATETIME)
     status: RaffleStatus = Field(
         default=RaffleStatus.DRAFT,
         sa_type=status_column_type(RaffleStatus),

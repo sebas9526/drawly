@@ -58,7 +58,7 @@ export function ReportFilters({ fields, value, onChange }: ReportFiltersProps): 
             onChange={(event) => set('raffleId', event.target.value)}
           >
             <option value="">Todas</option>
-            {(raffles?.data ?? []).map((raffle) => (
+            {(raffles ?? []).map((raffle) => (
               <option key={raffle.id} value={raffle.id}>
                 {raffle.title}
               </option>

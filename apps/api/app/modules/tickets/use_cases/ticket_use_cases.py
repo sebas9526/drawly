@@ -57,6 +57,21 @@ class TicketUseCases:
     def _ttl(self) -> timedelta:
         return timedelta(hours=get_settings().reservation_ttl_hours)
 
+    async def release_expired_reservations(self) -> list[Ticket]:
+        """System-wide sweep: releases every RESERVED ticket whose TTL has
+        elapsed back to AVAILABLE, across all owners. Called periodically by
+        the in-process scheduler (see app/modules/tickets/jobs); not owner
+        scoped since expiry isn't a per-request, per-owner concern."""
+        now = utcnow()
+        expired = await self._repository.list_expired_reserved(now=now)
+        released: list[Ticket] = []
+        for ticket in expired:
+            self._service.release_expired(ticket, now=now)
+            released.append(await self._repository.save(ticket))
+        if released:
+            await self._session.commit()
+        return released
+
     async def generate_for_raffle(
         self,
         raffle_id: uuid.UUID,
@@ -211,8 +226,10 @@ class TicketUseCases:
     async def status_counts(self, raffle_id: uuid.UUID) -> dict[TicketStatus, int]:
         return await self._repository.status_counts(raffle_id)
 
-    async def list_by_raffle(self, raffle_id: uuid.UUID) -> list[Ticket]:
-        return await self._repository.list_by_raffle(raffle_id)
+    async def list_by_raffle(
+        self, raffle_id: uuid.UUID, *, offset: int, limit: int
+    ) -> tuple[list[Ticket], int]:
+        return await self._repository.list_by_raffle(raffle_id, offset=offset, limit=limit)
 
     async def get_by_number(self, raffle_id: uuid.UUID, number: int) -> Ticket | None:
         return await self._repository.get_by_raffle_and_number(raffle_id, number)

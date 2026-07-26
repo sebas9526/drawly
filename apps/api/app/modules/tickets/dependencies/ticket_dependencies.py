@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_session
+from app.database.session import get_session, get_session_factory
 from app.modules.collaborators.repositories import CollaboratorRepository
+from app.modules.tickets.models import Ticket
 from app.modules.tickets.repositories import TicketRepository
 from app.modules.tickets.use_cases import TicketUseCases
 from app.modules.users.dependencies import CurrentUserDep
@@ -61,3 +62,13 @@ def get_public_tickets(
 
 
 TicketUseCasesDep = Annotated[TicketUseCases, Depends(get_ticket_use_cases)]
+
+
+async def sweep_expired_reservations() -> list[Ticket]:
+    """System-wide job (no request scope): opens its own session, releases
+    every expired reservation, and returns the tickets it touched. Wired into
+    the app lifespan's periodic scheduler (see app/main.py) — not a route
+    dependency, so it has no FastAPI ``Depends`` of its own."""
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        return await _unscoped_ticket_use_cases(session).release_expired_reservations()

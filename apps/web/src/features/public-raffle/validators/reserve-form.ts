@@ -1,11 +1,12 @@
+import { emailSchema, phoneSchema } from '@drawly/validators';
 import { z } from 'zod';
 
 /** Client-side validation for the public reservation form. The backend
  * re-validates and remains the source of truth. */
 export const reserveFormSchema = z.object({
   full_name: z.string().min(1, 'El nombre es obligatorio'),
-  phone: z.string().min(1, 'El teléfono es obligatorio'),
-  email: z.string().email('Correo inválido').or(z.literal('')),
+  phone: phoneSchema,
+  email: emailSchema.or(z.literal('')),
   document: z.string(),
   /** Optional collaborator (seller) id. */
   collaborator_id: z.string(),

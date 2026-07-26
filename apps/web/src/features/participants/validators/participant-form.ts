@@ -1,3 +1,4 @@
+import { emailSchema, phoneSchema } from '@drawly/validators';
 import { z } from 'zod';
 
 /**
@@ -6,9 +7,9 @@ import { z } from 'zod';
  * undefined before sending).
  */
 export const participantFormSchema = z.object({
-  full_name: z.string().min(1, 'Name is required'),
-  phone: z.string().min(1, 'Phone is required'),
-  email: z.string().email('Invalid email').or(z.literal('')),
+  full_name: z.string().min(1, 'El nombre es obligatorio'),
+  phone: phoneSchema,
+  email: emailSchema.or(z.literal('')),
   document: z.string(),
   city: z.string(),
   address: z.string(),

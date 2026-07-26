@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type CollaboratorStatsDto } from '@drawly/api-client';
+import { getApiErrorMessage, type CollaboratorStatsDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { DashboardCard } from '@drawly/ui/DashboardCard';
 import { DataTable, type Column } from '@drawly/ui/DataTable';
@@ -53,7 +53,7 @@ export function CollaboratorStats({ raffleId }: { raffleId: string }): React.JSX
       {isLoading && <Loader label="Cargando estadísticas…" />}
       {isError && (
         <Alert tone="danger">
-          {isApiError(error) ? error.message : 'No se pudieron cargar las estadísticas.'}
+          {getApiErrorMessage(error, 'No se pudieron cargar las estadísticas.')}
         </Alert>
       )}
       {data && data.length === 0 && (

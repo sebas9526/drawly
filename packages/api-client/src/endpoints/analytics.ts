@@ -2,8 +2,10 @@ import { API_V1_PREFIX } from '@drawly/constants';
 
 import type { ApiClient, PaginatedResult } from '../client/fetcher';
 import type {
+  AnalyticsCollaboratorsQuery,
   AnalyticsExportFormat,
   AnalyticsFiltersQuery,
+  AnalyticsParticipantsQuery,
   AnalyticsRafflesQuery,
   CollaboratorReportRow,
   ExecutiveDashboard,
@@ -31,11 +33,15 @@ export function createAnalyticsEndpoints(client: ApiClient) {
     getRaffleDetail: (raffleId: string): Promise<RaffleReportDetail> =>
       client.get<RaffleReportDetail>(`${BASE_PATH}/raffles/${raffleId}`),
 
-    getCollaborators: (query?: AnalyticsFiltersQuery): Promise<CollaboratorReportRow[]> =>
-      client.get<CollaboratorReportRow[]>(`${BASE_PATH}/collaborators`, { query }),
+    getCollaborators: (
+      query?: AnalyticsCollaboratorsQuery,
+    ): Promise<PaginatedResult<CollaboratorReportRow>> =>
+      client.getPaginated<CollaboratorReportRow>(`${BASE_PATH}/collaborators`, { query }),
 
-    getParticipants: (query?: AnalyticsFiltersQuery): Promise<ParticipantReportRow[]> =>
-      client.get<ParticipantReportRow[]>(`${BASE_PATH}/participants`, { query }),
+    getParticipants: (
+      query?: AnalyticsParticipantsQuery,
+    ): Promise<PaginatedResult<ParticipantReportRow>> =>
+      client.getPaginated<ParticipantReportRow>(`${BASE_PATH}/participants`, { query }),
 
     getSales: (query?: AnalyticsFiltersQuery): Promise<GlobalReports> =>
       client.get<GlobalReports>(`${BASE_PATH}/sales`, { query }),

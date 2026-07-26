@@ -109,6 +109,23 @@ class TicketService:
         return cls.cancel_reservation(ticket, now=now)
 
     @classmethod
+    def is_expired(cls, ticket: Ticket, *, now: datetime) -> bool:
+        """A RESERVED ticket whose TTL (set on reserve) has elapsed."""
+        return (
+            ticket.status is TicketStatus.RESERVED
+            and ticket.expires_at is not None
+            and ticket.expires_at <= now
+        )
+
+    @classmethod
+    def release_expired(cls, ticket: Ticket, *, now: datetime) -> Ticket:
+        """RESERVED (past its TTL) -> AVAILABLE. Same effect as an explicit
+        cancellation, triggered by the sweep instead of a user action."""
+        if not cls.is_expired(ticket, now=now):
+            raise TicketNotReservedError("Ticket is not an expired reservation.")
+        return cls.cancel_reservation(ticket, now=now)
+
+    @classmethod
     def mark_as_paid(cls, ticket: Ticket, *, now: datetime) -> Ticket:
         """RESERVED -> PAID. Only a reserved ticket can be paid, which prevents
         paying an available ticket or paying twice."""

@@ -89,6 +89,17 @@ async def test_public_tickets_expose_only_number_and_status(api_client: AsyncCli
         assert ticket["status"] == "available"
 
 
+async def test_public_tickets_are_paginated(api_client: AsyncClient) -> None:
+    _, slug = await _published_raffle(api_client, total_tickets=3)
+    response = await api_client.get(
+        f"{API}/public/raffles/{slug}/tickets", params={"page": 1, "page_size": 2}
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["data"]) == 2
+    assert body["pagination"] == {"page": 1, "page_size": 2, "total": 3, "total_pages": 2}
+
+
 async def test_reserve_available_ticket(api_client: AsyncClient) -> None:
     _, slug = await _published_raffle(api_client)
     response = await _reserve(api_client, slug, 1, phone="3001000")

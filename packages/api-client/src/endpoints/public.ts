@@ -1,7 +1,8 @@
 import { API_V1_PREFIX } from '@drawly/constants';
 
-import type { ApiClient } from '../client/fetcher';
+import type { ApiClient, PaginatedResult } from '../client/fetcher';
 import type {
+  ListPublicTicketsQuery,
   PublicCollaboratorView,
   PublicRaffleView,
   PublicReserveRequest,
@@ -21,8 +22,16 @@ export function createPublicEndpoints(client: ApiClient) {
     getRaffle: (slug: string): Promise<PublicRaffleView> =>
       client.get<PublicRaffleView>(`${BASE_PATH}/raffles/${slug}`, { skipAuth: true }),
 
-    listTickets: (slug: string): Promise<PublicTicketView[]> =>
-      client.get<PublicTicketView[]>(`${BASE_PATH}/raffles/${slug}/tickets`, { skipAuth: true }),
+    /** Paginated (bounded per request even for a 100,000-ticket raffle);
+     * see `fetchAllPages` for callers that still want the complete list. */
+    listTickets: (
+      slug: string,
+      query?: ListPublicTicketsQuery,
+    ): Promise<PaginatedResult<PublicTicketView>> =>
+      client.getPaginated<PublicTicketView>(`${BASE_PATH}/raffles/${slug}/tickets`, {
+        query,
+        skipAuth: true,
+      }),
 
     listCollaborators: (slug: string): Promise<PublicCollaboratorView[]> =>
       client.get<PublicCollaboratorView[]>(`${BASE_PATH}/raffles/${slug}/collaborators`, {

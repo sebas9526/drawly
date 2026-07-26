@@ -3,6 +3,7 @@ import type {
   ListRafflesQuery,
   UpdateRaffleRequest,
 } from '@drawly/api-client';
+import { fetchAllPages } from '@drawly/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@drawly/constants';
@@ -12,7 +13,10 @@ import { api } from '@/lib/api';
 export function useRaffles(query?: Pick<ListRafflesQuery, 'search'>) {
   return useQuery({
     queryKey: [...QUERY_KEYS.raffles, { search: query?.search ?? null }] as const,
-    queryFn: () => api.raffles.list({ page_size: 100, search: query?.search }),
+    queryFn: () =>
+      fetchAllPages((page, pageSize) =>
+        api.raffles.list({ page, page_size: pageSize, search: query?.search }),
+      ),
   });
 }
 
@@ -37,7 +41,7 @@ export function useGenerateTickets() {
   return useMutation({
     mutationFn: (raffleId: string) => api.raffles.generateTickets(raffleId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ticketsAll });
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.raffles });
     },
   });

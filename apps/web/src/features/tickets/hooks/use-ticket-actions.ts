@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { QUERY_KEYS } from '@drawly/constants';
+
 import { api } from '@/lib/api';
 
 export interface AssignParticipantInput {
@@ -18,8 +20,8 @@ export interface AssignParticipantInput {
 export function useTicketActions() {
   const queryClient = useQueryClient();
   const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    void queryClient.invalidateQueries({ queryKey: ['participants'] });
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ticketsAll });
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.participantsAll });
   };
 
   const reserve = useMutation({
@@ -67,9 +69,9 @@ export function useBulkTicketActions() {
   const [isPending, setIsPending] = useState(false);
 
   const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    void queryClient.invalidateQueries({ queryKey: ['participants'] });
-    void queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ticketsAll });
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.participantsAll });
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.collaboratorsAll });
   };
 
   const runBulk = async (

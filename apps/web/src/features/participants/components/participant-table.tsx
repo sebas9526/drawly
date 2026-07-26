@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type ParticipantDto } from '@drawly/api-client';
+import { getApiErrorMessage, type ParticipantDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Badge } from '@drawly/ui/Badge';
 import { Card } from '@drawly/ui/Card';
@@ -94,7 +94,7 @@ export function ParticipantTable({
     <div className="flex flex-col gap-3">
       {deleteError != null && (
         <Alert tone="danger">
-          {isApiError(deleteError) ? deleteError.message : 'No se pudo eliminar el participante.'}
+          {getApiErrorMessage(deleteError, 'No se pudo eliminar el participante.')}
         </Alert>
       )}
       <Card className="p-2 sm:p-4">

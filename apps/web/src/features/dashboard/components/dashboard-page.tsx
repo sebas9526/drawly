@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  isApiError,
+  getApiErrorMessage,
   type DashboardRecentRaffle,
   type DashboardRecentReservation,
 } from '@drawly/api-client';
@@ -57,7 +57,7 @@ export function DashboardPage(): React.JSX.Element {
   const createRaffleModal = useDisclosure();
 
   const publicRaffleHref = useMemo(() => {
-    const published = raffles?.data.find((raffle) => raffle.status !== 'draft');
+    const published = raffles?.find((raffle) => raffle.status !== 'draft');
     return published ? ROUTES.PUBLIC_RAFFLE(published.public_slug) : null;
   }, [raffles]);
 
@@ -97,7 +97,7 @@ export function DashboardPage(): React.JSX.Element {
 
       {isError && (
         <Alert tone="danger" title="No pudimos cargar el dashboard">
-          {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
 

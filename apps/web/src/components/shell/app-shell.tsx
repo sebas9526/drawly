@@ -3,9 +3,10 @@
 import { Menu, PanelLeftClose, PanelLeftOpen, Search, Ticket } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ROUTES } from '@drawly/constants';
+import { useLocalStorage } from '@drawly/hooks';
 import { Avatar } from '@drawly/ui/Avatar';
 import { Badge } from '@drawly/ui/Badge';
 import { Breadcrumb, type BreadcrumbItem } from '@drawly/ui/Breadcrumb';
@@ -89,26 +90,12 @@ interface AppShellProps {
 }
 
 function AppShellInner({ breadcrumbs, children }: AppShellProps): React.JSX.Element {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useLocalStorage(COLLAPSE_KEY, false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
   const logout = useLogout();
 
-  useEffect(() => {
-    setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1');
-  }, []);
-
-  const toggleCollapsed = (): void => {
-    setCollapsed((value) => {
-      const next = !value;
-      try {
-        localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  };
+  const toggleCollapsed = (): void => setCollapsed(!collapsed);
 
   return (
     <div className="bg-background text-text-primary flex min-h-screen">

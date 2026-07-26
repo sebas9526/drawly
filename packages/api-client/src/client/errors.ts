@@ -31,3 +31,9 @@ export function isApiError(error: unknown): error is ApiError {
 export function isApiNetworkError(error: unknown): error is ApiNetworkError {
   return error instanceof ApiNetworkError;
 }
+
+/** The single place `isApiError(error) ? error.message : fallback` gets
+ * written, instead of repeating the ternary at every mutation call site. */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  return isApiError(error) ? error.message : fallback;
+}

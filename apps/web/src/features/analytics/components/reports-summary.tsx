@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError } from '@drawly/api-client';
+import { getApiErrorMessage } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { AnimatedNumber } from '@drawly/ui/AnimatedNumber';
 import { BarChart } from '@drawly/ui/BarChart';
@@ -73,7 +73,7 @@ export function ReportsSummary(): React.JSX.Element {
       )}
       {dashboard.isError && (
         <Alert tone="danger" title="No pudimos cargar el resumen">
-          {isApiError(dashboard.error) ? dashboard.error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(dashboard.error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
 
@@ -146,7 +146,7 @@ export function ReportsSummary(): React.JSX.Element {
 
       {sales.isError && (
         <Alert tone="danger" title="No pudimos cargar las gráficas">
-          {isApiError(sales.error) ? sales.error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(sales.error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
 

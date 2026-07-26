@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type CollaboratorReportRow } from '@drawly/api-client';
+import { getApiErrorMessage, type CollaboratorReportRow } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Card } from '@drawly/ui/Card';
 import { DataTable, type Column } from '@drawly/ui/DataTable';
@@ -81,7 +81,7 @@ export function ReportsCollaborators(): React.JSX.Element {
       {isLoading && <Loader label="Cargando colaboradores…" />}
       {isError && (
         <Alert tone="danger" title="No pudimos cargar el reporte">
-          {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
       {data && data.length === 0 && (

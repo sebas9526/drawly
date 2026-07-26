@@ -84,3 +84,51 @@ def test_available_ticket_cannot_be_marked_paid() -> None:
 def test_paid_ticket_is_immutable_when_paid_again() -> None:
     with pytest.raises(TicketImmutableError):
         TicketService.mark_as_paid(_ticket(TicketStatus.PAID), now=NOW)
+
+
+def test_reserved_ticket_past_its_ttl_is_expired() -> None:
+    ticket = _ticket(TicketStatus.RESERVED)
+    ticket.expires_at = NOW - timedelta(seconds=1)
+
+    assert TicketService.is_expired(ticket, now=NOW) is True
+
+
+def test_reserved_ticket_within_its_ttl_is_not_expired() -> None:
+    ticket = _ticket(TicketStatus.RESERVED)
+    ticket.expires_at = NOW + timedelta(seconds=1)
+
+    assert TicketService.is_expired(ticket, now=NOW) is False
+
+
+def test_available_ticket_is_never_expired() -> None:
+    ticket = _ticket(TicketStatus.AVAILABLE)
+    assert TicketService.is_expired(ticket, now=NOW) is False
+
+
+def test_release_expired_returns_ticket_to_available_and_clears_participant() -> None:
+    ticket = _ticket(TicketStatus.RESERVED)
+    ticket.participant_id = uuid.uuid4()
+    ticket.collaborator_id = uuid.uuid4()
+    ticket.reserved_at = NOW - TTL - timedelta(hours=1)
+    ticket.expires_at = NOW - timedelta(seconds=1)
+
+    TicketService.release_expired(ticket, now=NOW)
+
+    assert ticket.status is TicketStatus.AVAILABLE
+    assert ticket.participant_id is None
+    assert ticket.collaborator_id is None
+    assert ticket.reserved_at is None
+    assert ticket.expires_at is None
+
+
+def test_release_expired_rejects_a_ticket_that_is_not_actually_expired() -> None:
+    ticket = _ticket(TicketStatus.RESERVED)
+    ticket.expires_at = NOW + TTL
+
+    with pytest.raises(TicketNotReservedError):
+        TicketService.release_expired(ticket, now=NOW)
+
+
+def test_release_expired_rejects_a_ticket_that_is_not_reserved() -> None:
+    with pytest.raises(TicketNotReservedError):
+        TicketService.release_expired(_ticket(TicketStatus.AVAILABLE), now=NOW)

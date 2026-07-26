@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type RaffleDto } from '@drawly/api-client';
+import { getApiErrorMessage, type RaffleDto } from '@drawly/api-client';
 import { ActionMenu } from '@drawly/ui/ActionMenu';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
@@ -85,9 +85,7 @@ export function RaffleCard({
       </div>
 
       {actionError != null && (
-        <Alert tone="danger">
-          {isApiError(actionError) ? actionError.message : 'La acción falló.'}
-        </Alert>
+        <Alert tone="danger">{getApiErrorMessage(actionError, 'La acción falló.')}</Alert>
       )}
 
       <div className="grid grid-cols-3 gap-3 text-center">

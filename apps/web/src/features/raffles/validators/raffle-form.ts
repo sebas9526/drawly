@@ -6,20 +6,20 @@ import { z } from 'zod';
  * the form inputs and are coerced here into the API payload shape.
  */
 export const createRaffleFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  prize: z.string().min(1, 'Prize is required'),
+  title: z.string().min(1, 'El título es obligatorio'),
+  prize: z.string().min(1, 'El premio es obligatorio'),
   description: z.string().optional().default(''),
-  ticket_price: z.coerce.number().min(0, 'Price cannot be negative'),
+  ticket_price: z.coerce.number().min(0, 'El precio no puede ser negativo'),
   total_tickets: z.coerce
     .number()
-    .int('Must be a whole number')
-    .min(1, 'At least 1 ticket')
-    .max(100000, 'At most 100000 tickets'),
+    .int('Debe ser un número entero')
+    .min(1, 'Debe haber al menos 1 boleta')
+    .max(100000, 'Máximo 100000 boletas'),
   starting_number: z.coerce
     .number()
-    .int('Must be a whole number')
-    .refine((value) => value === 0 || value === 1, 'Must be 0 or 1'),
-  draw_date: z.string().min(1, 'Draw date is required'),
+    .int('Debe ser un número entero')
+    .refine((value) => value === 0 || value === 1, 'Debe ser 0 o 1'),
+  draw_date: z.string().min(1, 'La fecha del sorteo es obligatoria'),
 });
 
 export interface CreateRaffleFormValues {

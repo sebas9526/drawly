@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type AnalyticsExportFormat } from '@drawly/api-client';
+import { getApiErrorMessage, type AnalyticsExportFormat } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { FileSpreadsheet, FileText } from 'lucide-react';
@@ -26,7 +26,7 @@ export function ExportButtons({ filenameBase, onExport }: ExportButtonsProps): R
       const blob = await onExport(format);
       triggerBlobDownload(blob, `${filenameBase}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
     } catch (err) {
-      setError(isApiError(err) ? err.message : 'No se pudo generar el archivo.');
+      setError(getApiErrorMessage(err, 'No se pudo generar el archivo.'));
     } finally {
       setPending(null);
     }

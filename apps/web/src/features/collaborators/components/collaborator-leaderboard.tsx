@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError } from '@drawly/api-client';
+import { getApiErrorMessage } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Card } from '@drawly/ui/Card';
 import { DashboardCard } from '@drawly/ui/DashboardCard';
@@ -50,7 +50,7 @@ export function CollaboratorLeaderboard({
   if (isError) {
     return (
       <Alert tone="danger">
-        {isApiError(error) ? error.message : 'No se pudo cargar el ranking de colaboradores.'}
+        {getApiErrorMessage(error, 'No se pudo cargar el ranking de colaboradores.')}
       </Alert>
     );
   }

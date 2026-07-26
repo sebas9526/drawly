@@ -154,6 +154,45 @@ async def test_analytics_collaborators_report(api_client: AsyncClient) -> None:
     assert row["rank"] == 1
 
 
+async def test_analytics_collaborators_report_is_paginated_and_preserves_rank(
+    api_client: AsyncClient,
+) -> None:
+    """Rank depends on the full ordered set, so it must stay correct across
+    pages instead of restarting at 1 on every page (see AnalyticsUseCases.
+    _all_collaborator_rows / list_collaborators)."""
+    raffle_a = await _create_raffle(api_client, title="Rifa A", total=2, price=20_000)
+    raffle_b = await _create_raffle(api_client, title="Rifa B", total=2, price=10_000)
+    collaborator_a = await _create_collaborator(api_client, raffle_id=raffle_a, name="Top")
+    collaborator_b = await _create_collaborator(api_client, raffle_id=raffle_b, name="Second")
+    participant_id = await _create_participant(api_client, full_name="Ana", phone="3005555555")
+
+    for raffle_id, collaborator_id in ((raffle_a, collaborator_a), (raffle_b, collaborator_b)):
+        ticket_id = await _first_ticket_id(api_client, raffle_id=raffle_id, number=1)
+        await api_client.patch(
+            f"{API}/tickets/{ticket_id}/reserve",
+            json={"participant_id": participant_id, "collaborator_id": collaborator_id},
+        )
+        await api_client.patch(f"{API}/tickets/{ticket_id}/pay")
+
+    page1 = await api_client.get(
+        f"{API}/analytics/collaborators", params={"page": 1, "page_size": 1}
+    )
+    assert page1.status_code == 200, page1.text
+    body1 = page1.json()
+    assert body1["pagination"] == {"page": 1, "page_size": 1, "total": 2, "total_pages": 2}
+    assert len(body1["data"]) == 1
+    assert body1["data"][0]["name"] == "Top"
+    assert body1["data"][0]["rank"] == 1
+
+    page2 = await api_client.get(
+        f"{API}/analytics/collaborators", params={"page": 2, "page_size": 1}
+    )
+    body2 = page2.json()
+    assert len(body2["data"]) == 1
+    assert body2["data"][0]["name"] == "Second"
+    assert body2["data"][0]["rank"] == 2
+
+
 async def test_analytics_participants_report(api_client: AsyncClient) -> None:
     seed = await _seed_one_paid_sale(api_client)
 
@@ -168,6 +207,33 @@ async def test_analytics_participants_report(api_client: AsyncClient) -> None:
     assert row["amount_invested"] == 10_000.0
     assert row["raffles_count"] == 1
     assert row["last_purchase_at"] is not None
+
+
+async def test_analytics_participants_report_is_paginated(api_client: AsyncClient) -> None:
+    raffle_id = await _create_raffle(api_client, title="Rifa", total=2, price=10_000)
+    ana = await _create_participant(api_client, full_name="Ana", phone="3001111111")
+    beto = await _create_participant(api_client, full_name="Beto", phone="3002222222")
+    for number, participant_id in ((1, ana), (2, beto)):
+        ticket_id = await _first_ticket_id(api_client, raffle_id=raffle_id, number=number)
+        await api_client.patch(
+            f"{API}/tickets/{ticket_id}/reserve", json={"participant_id": participant_id}
+        )
+
+    page1 = await api_client.get(
+        f"{API}/analytics/participants", params={"page": 1, "page_size": 1}
+    )
+    assert page1.status_code == 200, page1.text
+    body1 = page1.json()
+    assert body1["pagination"] == {"page": 1, "page_size": 1, "total": 2, "total_pages": 2}
+    assert len(body1["data"]) == 1
+
+    page2 = await api_client.get(
+        f"{API}/analytics/participants", params={"page": 2, "page_size": 1}
+    )
+    body2 = page2.json()
+    assert len(body2["data"]) == 1
+    # The two pages are disjoint halves of the same ordered set.
+    assert body1["data"][0]["id"] != body2["data"][0]["id"]
 
 
 async def test_analytics_sales_global_reports(api_client: AsyncClient) -> None:

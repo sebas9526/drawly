@@ -1,4 +1,5 @@
 import type { AnalyticsFiltersQuery, AnalyticsRafflesQuery } from '@drawly/api-client';
+import { fetchAllPages } from '@drawly/api-client';
 import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@drawly/constants';
@@ -43,13 +44,19 @@ export function useAnalyticsRaffleDetail(raffleId: string) {
 export function useAnalyticsCollaborators(filters: AnalyticsFiltersQuery) {
   return useQuery({
     queryKey: QUERY_KEYS.analyticsCollaborators(filters),
-    queryFn: () => api.analytics.getCollaborators(filters),
+    queryFn: () =>
+      fetchAllPages((page, pageSize) =>
+        api.analytics.getCollaborators({ ...filters, page, page_size: pageSize }),
+      ),
   });
 }
 
 export function useAnalyticsParticipants(filters: AnalyticsFiltersQuery) {
   return useQuery({
     queryKey: QUERY_KEYS.analyticsParticipants(filters),
-    queryFn: () => api.analytics.getParticipants(filters),
+    queryFn: () =>
+      fetchAllPages((page, pageSize) =>
+        api.analytics.getParticipants({ ...filters, page, page_size: pageSize }),
+      ),
   });
 }

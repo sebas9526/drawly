@@ -42,10 +42,12 @@ class PublicRaffleUseCases:
         collaborators = await self._collaborators.list_by_raffle(raffle.id, active_only=True)
         return [PublicCollaboratorView.from_collaborator(c) for c in collaborators]
 
-    async def list_tickets(self, slug: str) -> list[PublicTicketView]:
+    async def list_tickets(
+        self, slug: str, *, offset: int, limit: int
+    ) -> tuple[list[PublicTicketView], int]:
         raffle = await self._raffles.get_published_by_slug(slug)
-        tickets = await self._tickets.list_by_raffle(raffle.id)
-        return [PublicTicketView.from_ticket(ticket) for ticket in tickets]
+        tickets, total = await self._tickets.list_by_raffle(raffle.id, offset=offset, limit=limit)
+        return [PublicTicketView.from_ticket(ticket) for ticket in tickets], total
 
     async def reserve(self, slug: str, request: PublicReserveRequest) -> PublicReserveResult:
         raffle = await self._raffles.get_published_by_slug(slug)

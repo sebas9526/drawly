@@ -1,23 +1,28 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
- * Browser-only. Falls back to in-memory state (no persistence) when
- * `window.localStorage` is unavailable (SSR, private browsing, etc.).
+ * Browser-only, SSR/hydration-safe. State always starts at `initialValue` —
+ * matching what the server renders — and syncs from `window.localStorage`
+ * only after mount, in an effect. Reading storage synchronously in the
+ * initial render (the naive approach) would make the client's first paint
+ * disagree with the server's, since the server has no `localStorage` to read
+ * and always falls back to `initialValue`; a client that resolves the real
+ * stored value on that same first paint triggers a React hydration mismatch.
  */
 export function useLocalStorage<TValue>(
   key: string,
   initialValue: TValue,
 ): [TValue, (value: TValue) => void] {
-  const [value, setValue] = useState<TValue>(() => {
-    if (typeof window === 'undefined') return initialValue;
+  const [value, setValue] = useState<TValue>(initialValue);
 
+  useEffect(() => {
     try {
       const stored = window.localStorage.getItem(key);
-      return stored ? (JSON.parse(stored) as TValue) : initialValue;
+      if (stored !== null) setValue(JSON.parse(stored) as TValue);
     } catch {
-      return initialValue;
+      // Storage unavailable (private mode, disabled) — keep initialValue.
     }
-  });
+  }, [key]);
 
   const setStoredValue = useCallback(
     (next: TValue) => {

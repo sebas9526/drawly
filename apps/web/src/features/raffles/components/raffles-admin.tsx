@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type RaffleDto } from '@drawly/api-client';
+import { getApiErrorMessage, type RaffleDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { ConfirmDialog } from '@drawly/ui/ConfirmDialog';
@@ -95,9 +95,7 @@ export function RafflesAdmin(): React.JSX.Element {
 
       {deleteRaffle.isError && (
         <Alert tone="danger">
-          {isApiError(deleteRaffle.error)
-            ? deleteRaffle.error.message
-            : 'No se pudo eliminar la rifa.'}
+          {getApiErrorMessage(deleteRaffle.error, 'No se pudo eliminar la rifa.')}
         </Alert>
       )}
 
@@ -110,10 +108,10 @@ export function RafflesAdmin(): React.JSX.Element {
       )}
       {isError && (
         <Alert tone="danger" title="No pudimos cargar las rifas">
-          {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
-      {data && data.data.length === 0 && (
+      {data && data.length === 0 && (
         <EmptyState
           icon={<Sparkles size={28} />}
           title={search ? 'Sin resultados' : 'Aún no hay rifas'}
@@ -131,9 +129,9 @@ export function RafflesAdmin(): React.JSX.Element {
           }
         />
       )}
-      {data && data.data.length > 0 && (
+      {data && data.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {data.data.map((raffle) => (
+          {data.map((raffle) => (
             <RaffleCard
               key={raffle.id}
               raffle={raffle}

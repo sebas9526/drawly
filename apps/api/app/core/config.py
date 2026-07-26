@@ -14,8 +14,20 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     # Hours a ticket reservation stays valid; persisted as expires_at on reserve.
-    # No background job releases expired reservations yet (see tickets module).
     reservation_ttl_hours: int = 48
+    # In-process sweep that releases expired reservations back to AVAILABLE (see
+    # app/modules/tickets/jobs). No external cron/queue required.
+    reservation_sweep_enabled: bool = True
+    reservation_sweep_interval_seconds: int = 60
+
+    # --- Rate limiting (in-memory, single-process fixed window; see app/core/rate_limit.py) ---
+    rate_limit_enabled: bool = True
+    rate_limit_auth_max_requests: int = 5
+    rate_limit_auth_window_seconds: int = 60
+    rate_limit_public_max_requests: int = 60
+    rate_limit_public_window_seconds: int = 60
+    rate_limit_reserve_max_requests: int = 10
+    rate_limit_reserve_window_seconds: int = 60
 
     database_url: str = "postgresql+asyncpg://drawly:drawly@localhost:5432/drawly"
     database_url_sync: str = "postgresql+psycopg://drawly:drawly@localhost:5432/drawly"

@@ -1,5 +1,4 @@
 import uuid
-from collections.abc import Sequence
 
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -115,13 +114,6 @@ class CollaboratorRepository:
             statement = statement.where(col(Collaborator.is_active).is_(True))
         result = await self._session.execute(statement)
         return result.scalars().first() is not None
-
-    async def ids_for_raffle(self, raffle_id: uuid.UUID) -> Sequence[uuid.UUID]:
-        statement = select(Collaborator.id).where(
-            Collaborator.raffle_id == raffle_id, col(Collaborator.deleted_at).is_(None)
-        )
-        result = await self._session.execute(statement)
-        return [row[0] for row in result.all()]
 
     async def save(self, collaborator: Collaborator) -> Collaborator:
         collaborator.updated_at = utcnow()

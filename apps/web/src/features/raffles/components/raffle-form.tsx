@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type RaffleDto } from '@drawly/api-client';
+import { getApiErrorMessage, type RaffleDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { Field } from '@drawly/ui/Field';
@@ -104,9 +104,7 @@ export function RaffleForm({ raffle, onDone }: RaffleFormProps): React.JSX.Eleme
       </div>
 
       {error && (
-        <Alert tone="danger">
-          {isApiError(error) ? error.message : 'No se pudo guardar la rifa.'}
-        </Alert>
+        <Alert tone="danger">{getApiErrorMessage(error, 'No se pudo guardar la rifa.')}</Alert>
       )}
 
       <div className="flex justify-end">

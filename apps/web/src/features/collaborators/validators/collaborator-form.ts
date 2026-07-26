@@ -1,3 +1,4 @@
+import { emailSchema, phoneSchema } from '@drawly/validators';
 import { z } from 'zod';
 
 /** Palette offered in the color picker (matches the design system accents). */
@@ -17,8 +18,8 @@ const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 export const collaboratorFormSchema = z.object({
   raffle_id: z.string().min(1, 'Selecciona una rifa'),
   name: z.string().min(1, 'El nombre es obligatorio').max(150),
-  phone: z.string().max(30).optional().or(z.literal('')),
-  email: z.string().email('Correo no válido').max(150).optional().or(z.literal('')),
+  phone: phoneSchema.optional().or(z.literal('')),
+  email: emailSchema.max(150).optional().or(z.literal('')),
   color: z.string().regex(HEX_COLOR, 'Color no válido'),
   notes: z.string().max(2000).optional().or(z.literal('')),
   is_active: z.boolean(),

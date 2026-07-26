@@ -1,4 +1,5 @@
 import type { PublicReserveRequest } from '@drawly/api-client';
+import { fetchAllPages } from '@drawly/api-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@drawly/constants';
@@ -28,7 +29,10 @@ export function usePublicCollaborators(slug: string) {
 export function usePublicTickets(slug: string) {
   return useQuery({
     queryKey: QUERY_KEYS.publicTickets(slug),
-    queryFn: () => api.public.listTickets(slug),
+    queryFn: () =>
+      fetchAllPages((page, pageSize) =>
+        api.public.listTickets(slug, { page, page_size: pageSize }),
+      ),
     enabled: slug.length > 0,
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
@@ -41,7 +45,7 @@ export function usePublicReserve(slug: string) {
     mutationFn: (payload: PublicReserveRequest) => api.public.reserveTicket(slug, payload),
     // Refresh availability + stats after any attempt (success or "taken").
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['public'] });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicAll });
     },
   });
 }

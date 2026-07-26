@@ -1,14 +1,26 @@
 import uuid
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
 from app.core.config import get_settings
+from app.core.rate_limit import rate_limit
 from app.core.responses import SuccessResponse
 from app.core.security import create_access_token
 from app.modules.users.dependencies import CurrentUserDep, UserUseCasesDep
 from app.modules.users.schemas import LoginRequest, RegisterRequest, UserRead
 
 router = APIRouter()
+
+_settings = get_settings()
+# Shared bucket for both routes: a credential-stuffing script hitting either
+# endpoint from the same client is throttled the same way.
+_auth_rate_limit = Depends(
+    rate_limit(
+        name="auth",
+        max_requests=_settings.rate_limit_auth_max_requests,
+        window_seconds=_settings.rate_limit_auth_window_seconds,
+    )
+)
 
 
 def _set_auth_cookie(response: Response, user_id: uuid.UUID) -> None:
@@ -25,7 +37,10 @@ def _set_auth_cookie(response: Response, user_id: uuid.UUID) -> None:
 
 
 @router.post(
-    "/register", response_model=SuccessResponse[UserRead], status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=SuccessResponse[UserRead],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[_auth_rate_limit],
 )
 async def register(
     payload: RegisterRequest, response: Response, use_cases: UserUseCasesDep
@@ -35,7 +50,7 @@ async def register(
     return SuccessResponse(message="Account created.", data=UserRead.from_entity(user))
 
 
-@router.post("/login", response_model=SuccessResponse[UserRead])
+@router.post("/login", response_model=SuccessResponse[UserRead], dependencies=[_auth_rate_limit])
 async def login(
     payload: LoginRequest, response: Response, use_cases: UserUseCasesDep
 ) -> SuccessResponse[UserRead]:

@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError } from '@drawly/api-client';
+import { getApiErrorMessage } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { DashboardCard } from '@drawly/ui/DashboardCard';
 import { Loader } from '@drawly/ui/Loader';
@@ -53,7 +53,7 @@ export function TicketsAdmin({
     return () => clearTimeout(timeout);
   }, [bulkNotice]);
 
-  const allTickets = useMemo(() => data?.data ?? [], [data]);
+  const allTickets = useMemo(() => data ?? [], [data]);
 
   const counts = useMemo(
     () => ({
@@ -70,7 +70,7 @@ export function TicketsAdmin({
     return allTickets.filter((ticket) => {
       if (filter !== 'all' && ticket.status !== filter) return false;
       if (!query) return true;
-      const participant = participants?.data.find((p) => p.id === ticket.participant_id);
+      const participant = participants?.find((p) => p.id === ticket.participant_id);
       return (
         String(ticket.number).includes(query) ||
         (participant?.full_name.toLowerCase().includes(query) ?? false)
@@ -191,21 +191,19 @@ export function TicketsAdmin({
           {bulkNotice && <Alert tone="info">{bulkNotice}</Alert>}
 
           {actionError && (
-            <Alert tone="danger">
-              {isApiError(actionError) ? actionError.message : 'La acción falló.'}
-            </Alert>
+            <Alert tone="danger">{getApiErrorMessage(actionError, 'La acción falló.')}</Alert>
           )}
           {isLoading && <Loader label="Cargando boletas…" />}
           {isError && (
             <Alert tone="danger">
-              {isApiError(error) ? error.message : 'No se pudieron cargar las boletas.'}
+              {getApiErrorMessage(error, 'No se pudieron cargar las boletas.')}
             </Alert>
           )}
           {data && (
             <TicketTable
               tickets={filteredTickets}
               maxNumber={startingNumber + total - 1}
-              participants={participants?.data ?? []}
+              participants={participants ?? []}
               pendingTicketId={pendingTicketId}
               emptyDescription={
                 search || filter !== 'all'

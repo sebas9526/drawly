@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type CollaboratorDto } from '@drawly/api-client';
+import { getApiErrorMessage, type CollaboratorDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { EmptyState } from '@drawly/ui/EmptyState';
@@ -41,12 +41,12 @@ export function CollaboratorsAdmin(): React.JSX.Element {
   const setActive = useSetCollaboratorActive();
 
   const raffleNameById = useMemo(() => {
-    const map = new Map((raffles?.data ?? []).map((r) => [r.id, r.title]));
+    const map = new Map((raffles ?? []).map((r) => [r.id, r.title]));
     return (id: string): string => map.get(id) ?? '—';
   }, [raffles]);
 
   const raffleSlugById = useMemo(() => {
-    const map = new Map((raffles?.data ?? []).map((r) => [r.id, r.public_slug]));
+    const map = new Map((raffles ?? []).map((r) => [r.id, r.public_slug]));
     return (id: string): string | undefined => map.get(id);
   }, [raffles]);
 
@@ -59,7 +59,7 @@ export function CollaboratorsAdmin(): React.JSX.Element {
   };
 
   const selectedRaffle = useMemo(
-    () => (raffles?.data ?? []).find((r) => r.id === raffleId) ?? null,
+    () => (raffles ?? []).find((r) => r.id === raffleId) ?? null,
     [raffles, raffleId],
   );
 
@@ -76,7 +76,7 @@ export function CollaboratorsAdmin(): React.JSX.Element {
     setEditing(null);
   };
 
-  const hasRaffles = (raffles?.data ?? []).length > 0;
+  const hasRaffles = (raffles ?? []).length > 0;
 
   return (
     <>
@@ -104,7 +104,7 @@ export function CollaboratorsAdmin(): React.JSX.Element {
           aria-label="Filtrar por rifa"
         >
           <option value="">Todas las rifas</option>
-          {(raffles?.data ?? []).map((raffle) => (
+          {(raffles ?? []).map((raffle) => (
             <option key={raffle.id} value={raffle.id}>
               {raffle.title}
             </option>
@@ -151,10 +151,10 @@ export function CollaboratorsAdmin(): React.JSX.Element {
       {isLoading && <Loader label="Cargando colaboradores…" />}
       {isError && (
         <Alert tone="danger" title="No pudimos cargar los colaboradores">
-          {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+          {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
         </Alert>
       )}
-      {data && data.data.length === 0
+      {data && data.length === 0
         ? hasRaffles && (
             <EmptyState
               icon={<UserPlus size={28} />}
@@ -168,7 +168,7 @@ export function CollaboratorsAdmin(): React.JSX.Element {
           )
         : data && (
             <CollaboratorTable
-              collaborators={data.data}
+              collaborators={data}
               raffleNameById={raffleNameById}
               deletingId={deleteCollaborator.variables ?? null}
               deleteError={deleteCollaborator.error}

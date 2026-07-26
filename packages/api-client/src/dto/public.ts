@@ -24,6 +24,12 @@ export interface PublicTicketView {
   status: TicketStatus;
 }
 
+export interface ListPublicTicketsQuery {
+  [key: string]: string | number | boolean | undefined | null;
+  page?: number;
+  page_size?: number;
+}
+
 export interface PublicCollaboratorView {
   id: string;
   name: string;

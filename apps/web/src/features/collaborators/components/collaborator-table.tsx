@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type CollaboratorDto } from '@drawly/api-client';
+import { getApiErrorMessage, type CollaboratorDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Card } from '@drawly/ui/Card';
 import { ConfirmDialog } from '@drawly/ui/ConfirmDialog';
@@ -120,7 +120,7 @@ export function CollaboratorTable({
     <div className="flex flex-col gap-3">
       {deleteError != null && (
         <Alert tone="danger">
-          {isApiError(deleteError) ? deleteError.message : 'No se pudo eliminar el colaborador.'}
+          {getApiErrorMessage(deleteError, 'No se pudo eliminar el colaborador.')}
         </Alert>
       )}
       <Card className="p-2 sm:p-4">

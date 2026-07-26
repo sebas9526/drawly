@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError, type ParticipantDto } from '@drawly/api-client';
+import { getApiErrorMessage, type ParticipantDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { Field } from '@drawly/ui/Field';
@@ -97,7 +97,7 @@ export function ParticipantForm({
 
       {error && (
         <Alert tone="danger">
-          {isApiError(error) ? error.message : 'No se pudo guardar el participante.'}
+          {getApiErrorMessage(error, 'No se pudo guardar el participante.')}
         </Alert>
       )}
 

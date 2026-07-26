@@ -1,6 +1,6 @@
 'use client';
 
-import { isApiError } from '@drawly/api-client';
+import { getApiErrorMessage } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Avatar } from '@drawly/ui/Avatar';
 import { Card } from '@drawly/ui/Card';
@@ -36,7 +36,7 @@ export function ParticipantDetail({ participantId }: ParticipantDetailProps): Re
 
   const raffleTitle = useMemo(() => {
     const map = new Map<string, string>();
-    raffles?.data.forEach((raffle) => map.set(raffle.id, raffle.title));
+    raffles?.forEach((raffle) => map.set(raffle.id, raffle.title));
     return (id: string): string => map.get(id) ?? id;
   }, [raffles]);
 
@@ -44,7 +44,7 @@ export function ParticipantDetail({ participantId }: ParticipantDetailProps): Re
   if (isError || !participant) {
     return (
       <Alert tone="danger" title="No pudimos cargar el participante">
-        {isApiError(error) ? error.message : 'Intenta de nuevo más tarde.'}
+        {getApiErrorMessage(error, 'Intenta de nuevo más tarde.')}
       </Alert>
     );
   }

@@ -49,6 +49,9 @@ importers:
       '@drawly/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@drawly/hooks':
+        specifier: workspace:*
+        version: link:../../packages/hooks
       '@drawly/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -58,6 +61,9 @@ importers:
       '@drawly/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@drawly/validators':
+        specifier: workspace:*
+        version: link:../../packages/validators
       '@tanstack/react-query':
         specifier: ^5.62.11
         version: 5.101.2(react@19.2.7)

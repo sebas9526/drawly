@@ -10,19 +10,28 @@ export const QUERY_KEYS = {
   authMe: ['auth', 'me'] as const,
   raffles: ['raffles'] as const,
   raffle: (id: string) => ['raffles', id] as const,
+  /** Broad prefix for invalidating every tickets query at once (any raffle,
+   * any status) — use instead of a raw `['tickets']` literal. */
+  ticketsAll: ['tickets'] as const,
   tickets: (raffleId?: string, status?: string) =>
     ['tickets', { raffleId: raffleId ?? null, status: status ?? null }] as const,
   ticket: (id: string) => ['tickets', id] as const,
   availableTickets: (raffleId: string) => ['tickets', 'available', raffleId] as const,
   raffleTicketCounts: (raffleId: string) => ['tickets', 'counts', raffleId] as const,
+  /** Broad prefix for invalidating every participants query at once. */
+  participantsAll: ['participants'] as const,
   participants: (search?: string) => ['participants', { search: search ?? null }] as const,
   participant: (id: string) => ['participants', id] as const,
   participantTickets: (id: string) => ['participants', id, 'tickets'] as const,
+  /** Broad prefix for invalidating every collaborators query at once. */
+  collaboratorsAll: ['collaborators'] as const,
   collaborators: (raffleId?: string, search?: string) =>
     ['collaborators', { raffleId: raffleId ?? null, search: search ?? null }] as const,
   collaborator: (id: string) => ['collaborators', id] as const,
   raffleCollaborators: (raffleId: string) => ['collaborators', 'raffle', raffleId] as const,
   collaboratorStats: (raffleId: string) => ['collaborators', 'stats', raffleId] as const,
+  /** Broad prefix for invalidating every public-portal query at once. */
+  publicAll: ['public'] as const,
   publicCollaborators: (slug: string) => ['public', 'raffle', slug, 'collaborators'] as const,
   publicRaffle: (slug: string) => ['public', 'raffle', slug] as const,
   publicTickets: (slug: string) => ['public', 'raffle', slug, 'tickets'] as const,
