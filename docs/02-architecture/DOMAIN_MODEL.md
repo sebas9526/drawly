@@ -73,11 +73,17 @@ Represents a raffle created by an organizer.
 - coverImage
 - ticketPrice
 - totalTickets
+- startingNumber
 - drawDate
 - status
 - publicSlug
 - createdAt
 - updatedAt
+
+> `startingNumber` (`0` or `1`, default `1`) fixes the first ticket number
+> generated, so a 100-ticket raffle can produce `"00".."99"` instead of the
+> default `"001".."100"`. Set at creation only — immutable afterwards, same
+> rule as `totalTickets` once tickets exist.
 
 ### Relationships
 
@@ -107,6 +113,8 @@ Represents a numbered ticket inside a raffle.
 > intentionally decoupled from raffle creation so the numbering/format can be
 > reconfigured before publishing. `expiresAt` records reservation expiry (set on
 > reserve); automatic release of expired reservations is future work.
+> `number` starts at the raffle's `startingNumber` (`0` or `1`), so it may be
+> `0` for a raffle configured to start at zero.
 
 ### Relationships
 

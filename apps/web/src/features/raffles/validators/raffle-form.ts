@@ -15,6 +15,10 @@ export const createRaffleFormSchema = z.object({
     .int('Must be a whole number')
     .min(1, 'At least 1 ticket')
     .max(100000, 'At most 100000 tickets'),
+  starting_number: z.coerce
+    .number()
+    .int('Must be a whole number')
+    .refine((value) => value === 0 || value === 1, 'Must be 0 or 1'),
   draw_date: z.string().min(1, 'Draw date is required'),
 });
 
@@ -24,5 +28,6 @@ export interface CreateRaffleFormValues {
   description: string;
   ticket_price: string;
   total_tickets: string;
+  starting_number: string;
   draw_date: string;
 }

@@ -13,7 +13,9 @@ import { TICKET_STATUS_PRESENTATION } from '../services/ticket-status';
 
 interface TicketTableProps {
   tickets: TicketDto[];
-  total: number;
+  /** Largest generated ticket number (starting_number + total_tickets - 1) —
+   * drives zero-padding width. */
+  maxNumber: number;
   participants: ParticipantDto[];
   pendingTicketId: string | null;
   selection: DataTableSelection;
@@ -27,7 +29,7 @@ interface TicketTableProps {
 
 export function TicketTable({
   tickets,
-  total,
+  maxNumber,
   participants,
   pendingTicketId,
   selection,
@@ -56,7 +58,7 @@ export function TicketTable({
       header: 'Número',
       render: (ticket) => (
         <span className="text-text-primary font-mono">
-          {formatTicketNumber(ticket.number, total)}
+          {formatTicketNumber(ticket.number, maxNumber)}
         </span>
       ),
     },

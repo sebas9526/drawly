@@ -31,7 +31,8 @@ class Ticket(UUIDAuditBase, table=True):
     collaborator_id: uuid.UUID | None = Field(
         default=None, foreign_key="collaborators.id", index=True
     )
-    number: int = Field(index=True, ge=1)
+    # 0 when the owning raffle chose to start numbering at 0 (e.g. "00"-"99").
+    number: int = Field(index=True, ge=0)
     status: TicketStatus = Field(
         default=TicketStatus.AVAILABLE,
         sa_type=status_column_type(TicketStatus),

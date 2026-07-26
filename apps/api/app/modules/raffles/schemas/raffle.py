@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,6 +19,10 @@ class RaffleCreate(BaseModel):
     prize: str = Field(default="", max_length=2000)
     ticket_price: Decimal = Field(default=Decimal("0"), ge=0)
     total_tickets: int = Field(ge=1, le=100_000)
+    # First ticket number to generate: "1" -> 1..total, "0" -> 0..total-1.
+    # Restricted to 0/1 (not arbitrary) and immutable once set — see
+    # RaffleUpdate, which deliberately has no starting_number field.
+    starting_number: Literal[0, 1] = 1
     draw_date: datetime
 
 
@@ -41,6 +46,7 @@ class RaffleRead(BaseModel):
     cover_image: str | None
     ticket_price: float
     total_tickets: int
+    starting_number: int
     draw_date: datetime
     status: RaffleStatus
     public_slug: str
@@ -58,6 +64,7 @@ class RaffleRead(BaseModel):
             cover_image=raffle.cover_image,
             ticket_price=float(raffle.ticket_price),
             total_tickets=raffle.total_tickets,
+            starting_number=raffle.starting_number,
             draw_date=raffle.draw_date,
             status=raffle.status,
             public_slug=raffle.public_slug,

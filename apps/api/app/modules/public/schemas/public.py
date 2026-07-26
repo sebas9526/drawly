@@ -22,6 +22,9 @@ class PublicRaffleView(BaseModel):
     ticket_price: float
     draw_date: datetime
     total_tickets: int
+    # Needed so the public portal can zero-pad ticket numbers correctly when a
+    # raffle starts numbering at 0 (e.g. "00".."99" instead of "01".."100").
+    starting_number: int
     available_count: int
     reserved_count: int
     paid_count: int
@@ -37,6 +40,7 @@ class PublicRaffleView(BaseModel):
             ticket_price=float(raffle.ticket_price),
             draw_date=raffle.draw_date,
             total_tickets=raffle.total_tickets,
+            starting_number=raffle.starting_number,
             available_count=counts.get(TicketStatus.AVAILABLE, 0),
             reserved_count=counts.get(TicketStatus.RESERVED, 0),
             paid_count=counts.get(TicketStatus.PAID, 0),
@@ -87,7 +91,8 @@ class PublicParticipantInput(BaseModel):
 class PublicReserveRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    ticket_number: int = Field(ge=1)
+    # ge=0: a raffle may start numbering at 0 (RaffleCreate.starting_number).
+    ticket_number: int = Field(ge=0)
     participant: PublicParticipantInput
     # Optional seller credited with the reservation; validated against the raffle.
     collaborator_id: uuid.UUID | None = None

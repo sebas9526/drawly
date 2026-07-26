@@ -21,6 +21,7 @@ class RaffleService:
             prize=data.prize,
             ticket_price=data.ticket_price,
             total_tickets=data.total_tickets,
+            starting_number=data.starting_number,
             draw_date=data.draw_date,
             status=RaffleStatus.DRAFT,
             public_slug=public_slug,

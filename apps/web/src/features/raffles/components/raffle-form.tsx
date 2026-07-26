@@ -5,6 +5,7 @@ import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
 import { Field } from '@drawly/ui/Field';
 import { Input } from '@drawly/ui/Input';
+import { Select } from '@drawly/ui/Select';
 import { useForm } from 'react-hook-form';
 
 import { useCreateRaffle, useUpdateRaffle } from '../hooks/use-raffles';
@@ -16,6 +17,7 @@ const EMPTY: CreateRaffleFormValues = {
   description: '',
   ticket_price: '0',
   total_tickets: '100',
+  starting_number: '1',
   draw_date: '',
 };
 
@@ -34,6 +36,7 @@ function toDefaults(raffle: RaffleDto | null | undefined): CreateRaffleFormValue
     description: raffle.description,
     ticket_price: String(raffle.ticket_price),
     total_tickets: String(raffle.total_tickets),
+    starting_number: String(raffle.starting_number),
     draw_date: toDatetimeLocal(raffle.draw_date),
   };
 }
@@ -56,7 +59,15 @@ export function RaffleForm({ raffle, onDone }: RaffleFormProps): React.JSX.Eleme
     const parsed = createRaffleFormSchema.safeParse(values);
     if (!parsed.success) return;
     if (raffle) {
-      update.mutate({ id: raffle.id, payload: parsed.data }, { onSuccess: () => onDone?.() });
+      // starting_number is immutable once the raffle exists — never send it on update.
+      const { title, description, prize, ticket_price, total_tickets, draw_date } = parsed.data;
+      update.mutate(
+        {
+          id: raffle.id,
+          payload: { title, description, prize, ticket_price, total_tickets, draw_date },
+        },
+        { onSuccess: () => onDone?.() },
+      );
     } else {
       create.mutate(parsed.data, { onSuccess: () => onDone?.() });
     }
@@ -76,6 +87,12 @@ export function RaffleForm({ raffle, onDone }: RaffleFormProps): React.JSX.Eleme
         </Field>
         <Field label="Total de boletas">
           <Input type="number" min={1} disabled={Boolean(raffle)} {...register('total_tickets')} />
+        </Field>
+        <Field label="Numeración inicial" hint="No se puede cambiar después de crear la rifa.">
+          <Select disabled={Boolean(raffle)} {...register('starting_number')}>
+            <option value="1">Empieza en 1 (ej. 001 - 100)</option>
+            <option value="0">Empieza en 0 (ej. 00 - 99)</option>
+          </Select>
         </Field>
         <Field label="Fecha del sorteo" htmlFor="draw_date">
           <Input

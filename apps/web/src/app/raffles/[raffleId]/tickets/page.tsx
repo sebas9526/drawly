@@ -32,6 +32,7 @@ export default function RaffleTicketsPage(): React.JSX.Element {
           <TicketsAdmin
             raffleId={raffleId}
             total={raffle.total_tickets}
+            startingNumber={raffle.starting_number}
             ticketPrice={raffle.ticket_price}
           />
           <CollaboratorStats raffleId={raffleId} />

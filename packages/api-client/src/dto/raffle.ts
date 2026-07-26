@@ -17,6 +17,10 @@ export interface RaffleDto {
   cover_image: string | null;
   ticket_price: number;
   total_tickets: number;
+  /** First ticket number generated: 1 -> "1".."total", 0 -> "0"..(total-1).
+   * Restricted to 0 or 1 by the API; fixed at creation and never editable
+   * afterwards (absent from UpdateRaffleRequest). */
+  starting_number: number;
   draw_date: string;
   status: RaffleStatus;
   public_slug: string;
@@ -30,10 +34,11 @@ export interface CreateRaffleRequest {
   prize: string;
   ticket_price: number;
   total_tickets: number;
+  starting_number?: number;
   draw_date: string;
 }
 
-export type UpdateRaffleRequest = Partial<CreateRaffleRequest>;
+export type UpdateRaffleRequest = Partial<Omit<CreateRaffleRequest, 'starting_number'>>;
 
 export interface ListRafflesQuery {
   [key: string]: string | number | boolean | undefined | null;

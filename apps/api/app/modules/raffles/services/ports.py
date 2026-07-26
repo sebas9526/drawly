@@ -12,7 +12,11 @@ class TicketProvisioning(Protocol):
     """
 
     async def generate_for_raffle(
-        self, raffle_id: uuid.UUID, quantity: int, owner_id: uuid.UUID | None = None
+        self,
+        raffle_id: uuid.UUID,
+        quantity: int,
+        owner_id: uuid.UUID | None = None,
+        starting_number: int = 1,
     ) -> int: ...
 
     async def count_for_raffle(self, raffle_id: uuid.UUID) -> int: ...

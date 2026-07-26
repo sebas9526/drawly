@@ -35,6 +35,10 @@ class Raffle(UUIDAuditBase, table=True):
     cover_image: str | None = Field(default=None)
     ticket_price: Decimal = Field(default=Decimal("0"), sa_type=_MONEY, nullable=False)
     total_tickets: int = Field(ge=1)
+    # First ticket number generated (0 or 1 only). Fixed at creation time and
+    # never editable afterwards — same immutability rule as total_tickets once
+    # tickets exist (see RaffleUpdate, which omits this field entirely).
+    starting_number: int = Field(default=1, ge=0, le=1)
     draw_date: datetime
     status: RaffleStatus = Field(
         default=RaffleStatus.DRAFT,

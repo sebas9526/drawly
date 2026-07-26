@@ -17,7 +17,9 @@ import {
 
 interface ReserveFormProps {
   ticketNumber: number;
-  total: number;
+  /** Largest generated ticket number (starting_number + total_tickets - 1) —
+   * drives zero-padding width. */
+  maxNumber: number;
   pending: boolean;
   errorMessage: string | null;
   collaborators: PublicCollaboratorView[];
@@ -31,7 +33,7 @@ interface ReserveFormProps {
 
 export function ReserveForm({
   ticketNumber,
-  total,
+  maxNumber,
   pending,
   errorMessage,
   collaborators,
@@ -56,7 +58,7 @@ export function ReserveForm({
       <div className="bg-primary/5 border-primary/20 flex items-center gap-2 rounded-lg border p-3 text-sm">
         <span className="text-text-secondary">Reservando la boleta</span>
         <span className="text-primary font-mono text-base font-semibold">
-          #{formatTicketNumber(ticketNumber, total)}
+          #{formatTicketNumber(ticketNumber, maxNumber)}
         </span>
       </div>
 

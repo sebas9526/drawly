@@ -8,7 +8,9 @@ import { PUBLIC_TICKET_STATUS, type PublicTicketFilter } from '../services/ticke
 
 interface TicketGridProps {
   tickets: PublicTicketView[];
-  total: number;
+  /** Largest generated ticket number (starting_number + total_tickets - 1) —
+   * drives zero-padding width. */
+  maxNumber: number;
   loading: boolean;
   filter: PublicTicketFilter;
   search: string;
@@ -26,7 +28,7 @@ const FILTERS: { value: PublicTicketFilter; label: string }[] = [
 
 export function TicketGrid({
   tickets,
-  total,
+  maxNumber,
   loading,
   filter,
   search,
@@ -106,7 +108,7 @@ export function TicketGrid({
               >
                 <span className={cn('inline-block h-2 w-2 rounded-full', style.dotClass)} />
                 <span className="text-text-primary font-mono font-medium">
-                  {formatTicketNumber(ticket.number, total)}
+                  {formatTicketNumber(ticket.number, maxNumber)}
                 </span>
               </button>
             );

@@ -26,3 +26,13 @@ def test_generation_produces_exactly_requested_quantity(quantity: int) -> None:
 def test_generation_rejects_non_positive_quantity() -> None:
     with pytest.raises(InvalidTicketQuantityError):
         TicketGenerationService.generate(uuid.uuid4(), 0, now=NOW)
+
+
+def test_generation_honors_starting_number_zero() -> None:
+    raffle_id = uuid.uuid4()
+    tickets = TicketGenerationService.generate(raffle_id, 100, now=NOW, starting_number=0)
+
+    numbers = [ticket.number for ticket in tickets]
+    assert numbers == list(range(0, 100))  # "00".."99", not "001".."100"
+    assert min(numbers) == 0
+    assert max(numbers) == 99

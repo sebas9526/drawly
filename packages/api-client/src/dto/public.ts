@@ -13,6 +13,7 @@ export interface PublicRaffleView {
   ticket_price: number;
   draw_date: string;
   total_tickets: number;
+  starting_number: number;
   available_count: number;
   reserved_count: number;
   paid_count: number;

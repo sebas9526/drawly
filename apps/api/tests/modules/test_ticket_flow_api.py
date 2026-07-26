@@ -11,7 +11,9 @@ from httpx import AsyncClient
 API = "/api/v1"
 
 
-async def _create_raffle(client: AsyncClient, total_tickets: int = 5) -> str:
+async def _create_raffle(
+    client: AsyncClient, total_tickets: int = 5, starting_number: int = 1
+) -> str:
     response = await client.post(
         f"{API}/raffles",
         json={
@@ -20,6 +22,7 @@ async def _create_raffle(client: AsyncClient, total_tickets: int = 5) -> str:
             "prize": "Un carro",
             "ticket_price": 10000,
             "total_tickets": total_tickets,
+            "starting_number": starting_number,
             "draw_date": "2026-08-01T19:00:00+00:00",
         },
     )
@@ -48,6 +51,44 @@ async def test_generate_tickets_creates_exact_count(api_client: AsyncClient) -> 
     assert len(tickets) == 5
     assert [t["number"] for t in tickets] == [1, 2, 3, 4, 5]
     assert all(t["status"] == "available" for t in tickets)
+
+
+async def test_generate_tickets_honors_starting_number_zero(api_client: AsyncClient) -> None:
+    raffle_id = await _create_raffle(api_client, total_tickets=100, starting_number=0)
+
+    response = await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    assert response.status_code == 201, response.text
+    assert response.json()["data"]["generated"] == 100
+
+    tickets = await _tickets(api_client, raffle_id)
+    assert min(t["number"] for t in tickets) == 0
+    assert max(t["number"] for t in tickets) == 99
+
+
+async def test_raffle_rejects_invalid_starting_number(api_client: AsyncClient) -> None:
+    response = await api_client.post(
+        f"{API}/raffles",
+        json={
+            "title": "Rifa inválida",
+            "description": "",
+            "prize": "x",
+            "ticket_price": 1000,
+            "total_tickets": 10,
+            "starting_number": 2,
+            "draw_date": "2026-08-01T19:00:00+00:00",
+        },
+    )
+    assert response.status_code == 422
+
+
+async def test_raffle_starting_number_is_immutable_after_creation(
+    api_client: AsyncClient,
+) -> None:
+    raffle_id = await _create_raffle(api_client, total_tickets=10, starting_number=0)
+
+    # RaffleUpdate has no starting_number field at all (extra="forbid").
+    response = await api_client.put(f"{API}/raffles/{raffle_id}", json={"starting_number": 1})
+    assert response.status_code == 422
 
 
 async def test_tickets_cannot_be_generated_twice(api_client: AsyncClient) -> None:

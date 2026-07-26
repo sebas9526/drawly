@@ -138,8 +138,16 @@ Request
   "prize": "",
   "ticket_price": 10000,
   "total_tickets": 100,
+  "starting_number": 1,
   "draw_date": "2026-08-01T19:00:00"
 }
+
+`starting_number` is `0` or `1` (default `1`) — the first ticket number that
+will be generated. `1` produces `"1".."total_tickets"`; `0` produces
+`"0"..(total_tickets - 1)` (e.g. a 100-ticket raffle becomes `"00".."99"`
+instead of `"001".."100"` once display-padded). **Immutable once set** — it is
+not present on `UpdateRaffleRequest` at all, so it can never change after
+creation, the same rule as `total_tickets` once tickets exist.
 
 ---
 
@@ -147,7 +155,8 @@ Request
 
 PUT /raffles/{id}
 
-Only allowed while the raffle is in `draft`.
+Only allowed while the raffle is in `draft`. `starting_number` is not an
+accepted field — sending it returns 422 (the schema forbids unknown fields).
 
 ---
 
@@ -156,9 +165,9 @@ Only allowed while the raffle is in `draft`.
 POST /raffles/{id}/tickets
 
 Explicitly generates the raffle's configured `total_tickets` sequential tickets
-(status `available`). Separate from raffle creation by design so numbering can be
-reconfigured before publishing. Fails with 409 if tickets already exist, or if the
-raffle is not in `draft`.
+starting from `starting_number` (status `available`). Separate from raffle
+creation by design so numbering can be reconfigured before publishing. Fails
+with 409 if tickets already exist, or if the raffle is not in `draft`.
 
 Response
 
@@ -233,6 +242,7 @@ Response data (no internal id / organization / status):
   "ticket_price": 5000,
   "draw_date": "",
   "total_tickets": 100,
+  "starting_number": 1,
   "available_count": 90,
   "reserved_count": 8,
   "paid_count": 2

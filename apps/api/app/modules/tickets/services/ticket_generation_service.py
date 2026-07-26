@@ -1,8 +1,10 @@
 """Bulk ticket generation as a pure domain operation.
 
-Numbers are sequential integers 1..quantity (canonical stored value). Zero-
-padded display labels (0001, 0002, ...) are a presentation concern rendered at
-the edge from the raffle size, so nothing here formats strings.
+Numbers are sequential integers starting_number..starting_number+quantity-1
+(canonical stored value; starting_number is 0 or 1, fixed by the raffle at
+creation). Zero-padded display labels (0001, 0002, ...) are a presentation
+concern rendered at the edge from the raffle size, so nothing here formats
+strings.
 """
 
 import uuid
@@ -20,6 +22,7 @@ class TicketGenerationService:
         *,
         now: datetime,
         owner_id: uuid.UUID | None = None,
+        starting_number: int = 1,
     ) -> list[Ticket]:
         ensure_valid_quantity(quantity)
         return [
@@ -31,5 +34,5 @@ class TicketGenerationService:
                 created_at=now,
                 updated_at=now,
             )
-            for number in range(1, quantity + 1)
+            for number in range(starting_number, starting_number + quantity)
         ]

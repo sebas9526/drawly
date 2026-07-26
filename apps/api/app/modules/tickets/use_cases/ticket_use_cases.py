@@ -58,11 +58,21 @@ class TicketUseCases:
         return timedelta(hours=get_settings().reservation_ttl_hours)
 
     async def generate_for_raffle(
-        self, raffle_id: uuid.UUID, quantity: int, owner_id: uuid.UUID | None = None
+        self,
+        raffle_id: uuid.UUID,
+        quantity: int,
+        owner_id: uuid.UUID | None = None,
+        starting_number: int = 1,
     ) -> int:
         if await self._repository.count_by_raffle(raffle_id) > 0:
             raise TicketsAlreadyGeneratedError()
-        tickets = self._generator.generate(raffle_id, quantity, now=utcnow(), owner_id=owner_id)
+        tickets = self._generator.generate(
+            raffle_id,
+            quantity,
+            now=utcnow(),
+            owner_id=owner_id,
+            starting_number=starting_number,
+        )
         created = await self._repository.add_all(tickets)
         await self._session.commit()
         return created

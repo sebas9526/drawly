@@ -85,6 +85,7 @@ export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element 
   }
 
   const raffle = raffleQuery.data;
+  const maxNumber = raffle.starting_number + raffle.total_tickets - 1;
 
   if (confirmation) {
     return (
@@ -130,7 +131,7 @@ export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element 
         {selected === null ? (
           <TicketGrid
             tickets={ticketsQuery.data ?? []}
-            total={raffle.total_tickets}
+            maxNumber={maxNumber}
             loading={ticketsQuery.isLoading}
             filter={filter}
             search={search}
@@ -144,7 +145,7 @@ export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element 
         ) : (
           <ReserveForm
             ticketNumber={selected}
-            total={raffle.total_tickets}
+            maxNumber={maxNumber}
             pending={reserve.isPending}
             errorMessage={reserveErrorMessage}
             collaborators={collaboratorsQuery.data ?? []}

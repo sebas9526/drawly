@@ -80,7 +80,10 @@ class RaffleUseCases:
         raffle = await self.get(raffle_id)
         self._service.ensure_editable(raffle)
         generated = await self._tickets.generate_for_raffle(
-            raffle.id, raffle.total_tickets, raffle.owner_id
+            raffle.id,
+            raffle.total_tickets,
+            raffle.owner_id,
+            starting_number=raffle.starting_number,
         )
         return generated
 

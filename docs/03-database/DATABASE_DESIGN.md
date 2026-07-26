@@ -189,12 +189,26 @@ record which collaborator made the sale.
 | cover_image | TEXT |
 | ticket_price | NUMERIC(12,2) |
 | total_tickets | INTEGER |
+| starting_number | INTEGER NOT NULL DEFAULT 1 |
 | draw_date | TIMESTAMP |
 | status | VARCHAR(20) |
 | public_slug | VARCHAR(120) UNIQUE |
 | created_at | TIMESTAMP |
 | updated_at | TIMESTAMP |
 | deleted_at | TIMESTAMP NULL |
+
+Notes (custom ticket numbering):
+
+- `starting_number` is `0` or `1` (restricted at the app layer via
+  `RaffleCreate`/SQLModel `Field`, not a DB `CHECK` — consistent with
+  `total_tickets`' own `ge=1`, which also has no DB constraint). Set once at
+  creation and never editable afterwards (absent from `RaffleUpdate`). Added
+  in migration `0006_raffle_starting_number` with a server default of `1` so
+  every pre-existing row keeps its current numbering.
+- Ticket generation (`POST /raffles/{id}/tickets`) produces
+  `starting_number..starting_number + total_tickets - 1`, so `total = 100`
+  with `starting_number = 0` yields tickets `0`..`99` (displayed as `"00"`..
+  `"99"`) instead of the default `1`..`100`.
 
 ---
 
@@ -250,6 +264,8 @@ Notes (Sprint 3):
 - `raffle_id` has a real FK to `raffles`. `participant_id` is a nullable UUID
   without a FK until the participants module exists. Likewise `raffles.organization_id`
   is nullable/no-FK until the organizations module exists.
+- `number` is `>= 0` (relaxed from `>= 1`) so a raffle with `starting_number = 0`
+  can generate ticket `0`.
 
 ---
 

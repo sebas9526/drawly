@@ -22,14 +22,18 @@ import { TicketTable } from './ticket-table';
 
 interface TicketsAdminProps {
   raffleId: string;
-  /** Raffle's configured ticket count — drives zero-padding width. */
+  /** Raffle's configured ticket count. */
   total: number;
+  /** First generated ticket number (0 or 1) — combined with `total` to derive
+   * the zero-padding width. */
+  startingNumber: number;
   ticketPrice: number;
 }
 
 export function TicketsAdmin({
   raffleId,
   total,
+  startingNumber,
   ticketPrice,
 }: TicketsAdminProps): React.JSX.Element {
   const [filter, setFilter] = useState<TicketStatusFilter>('all');
@@ -200,7 +204,7 @@ export function TicketsAdmin({
           {data && (
             <TicketTable
               tickets={filteredTickets}
-              total={total}
+              maxNumber={startingNumber + total - 1}
               participants={participants?.data ?? []}
               pendingTicketId={pendingTicketId}
               emptyDescription={
