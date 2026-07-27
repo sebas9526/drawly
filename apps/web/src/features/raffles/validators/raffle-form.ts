@@ -20,6 +20,13 @@ export const createRaffleFormSchema = z.object({
     .int('Debe ser un número entero')
     .refine((value) => value === 0 || value === 1, 'Debe ser 0 o 1'),
   draw_date: z.string().min(1, 'La fecha del sorteo es obligatoria'),
+  // Optional: empty means "sin fecha de activación" (publicar manualmente,
+  // como hoy). Normalized to undefined here so the request payload omits it
+  // entirely instead of sending an empty string.
+  publish_at: z
+    .string()
+    .optional()
+    .transform((value) => (value && value.trim() !== '' ? value : undefined)),
 });
 
 export interface CreateRaffleFormValues {
@@ -30,4 +37,5 @@ export interface CreateRaffleFormValues {
   total_tickets: string;
   starting_number: string;
   draw_date: string;
+  publish_at: string;
 }

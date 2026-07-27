@@ -45,6 +45,13 @@ class Raffle(UUIDAuditBase, table=True):
     # suite (no strict tz-awareness check there), only surfaced against real
     # Postgres. See migration 0007_raffle_draw_date_timezone.
     draw_date: datetime = Field(sa_type=TZ_DATETIME)
+    # Optional scheduled activation. NULL (default) means "no schedule" —
+    # today's behavior of publishing only via an explicit manual action. When
+    # set, the in-process sweep (app/modules/raffles/dependencies.
+    # sweep_scheduled_raffles) publishes the raffle automatically once this
+    # moment passes, subject to the same precondition as a manual publish
+    # (tickets must already be generated).
+    publish_at: datetime | None = Field(default=None, sa_type=TZ_DATETIME, nullable=True)
     status: RaffleStatus = Field(
         default=RaffleStatus.DRAFT,
         sa_type=status_column_type(RaffleStatus),

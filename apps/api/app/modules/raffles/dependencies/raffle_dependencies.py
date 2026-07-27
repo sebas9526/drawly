@@ -3,7 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_session
+from app.database.session import get_session, get_session_factory
+from app.modules.raffles.models import Raffle
 from app.modules.raffles.repositories import RaffleRepository
 from app.modules.raffles.services import TicketProvisioning
 from app.modules.raffles.use_cases import RaffleUseCases
@@ -39,3 +40,19 @@ def get_public_raffles(
 
 
 RaffleUseCasesDep = Annotated[RaffleUseCases, Depends(get_raffle_use_cases)]
+
+
+async def sweep_scheduled_raffles() -> list[Raffle]:
+    """System-wide job (no request scope): opens its own session, publishes
+    every DRAFT raffle whose scheduled activation date has arrived (and that
+    already has tickets), and returns what it touched. Wired into the app
+    lifespan's periodic scheduler (see app/main.py) — not a route dependency,
+    so it has no FastAPI ``Depends`` of its own."""
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        use_cases = RaffleUseCases(
+            session=session,
+            repository=RaffleRepository(session),
+            tickets=get_ticket_provisioning(session),
+        )
+        return await use_cases.publish_scheduled_raffles()

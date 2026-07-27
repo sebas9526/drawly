@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     reservation_sweep_enabled: bool = True
     reservation_sweep_interval_seconds: int = 60
 
+    # In-process sweep that auto-publishes a DRAFT raffle once its optional
+    # `publish_at` schedule arrives (see app/modules/raffles/dependencies.
+    # sweep_scheduled_raffles). No external cron/queue required.
+    raffle_publish_sweep_enabled: bool = True
+    raffle_publish_sweep_interval_seconds: int = 60
+
     # --- Rate limiting (in-memory, single-process fixed window; see app/core/rate_limit.py) ---
     rate_limit_enabled: bool = True
     rate_limit_auth_max_requests: int = 5

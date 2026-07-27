@@ -61,6 +61,14 @@ async def update_raffle(
     return SuccessResponse(message="Raffle updated.", data=RaffleRead.from_entity(raffle))
 
 
+@router.delete("/{raffle_id}", response_model=SuccessResponse[dict[str, bool]])
+async def delete_raffle(
+    raffle_id: uuid.UUID, use_cases: RaffleUseCasesDep
+) -> SuccessResponse[dict[str, bool]]:
+    await use_cases.delete(raffle_id)
+    return SuccessResponse(message="Raffle deleted.", data={"deleted": True})
+
+
 @router.post(
     "/{raffle_id}/tickets",
     response_model=SuccessResponse[GenerateTicketsResult],

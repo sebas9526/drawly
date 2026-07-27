@@ -31,6 +31,19 @@ class TicketRepository:
         result = await self._session.execute(statement)
         return int(result.scalar_one())
 
+    async def count_with_participant_by_raffle(self, raffle_id: uuid.UUID) -> int:
+        statement = select(func.count()).select_from(
+            select(Ticket)
+            .where(
+                Ticket.raffle_id == raffle_id,
+                col(Ticket.participant_id).is_not(None),
+                col(Ticket.deleted_at).is_(None),
+            )
+            .subquery()
+        )
+        result = await self._session.execute(statement)
+        return int(result.scalar_one())
+
     async def get(
         self, ticket_id: uuid.UUID, *, owner_id: uuid.UUID | None = None
     ) -> Ticket | None:

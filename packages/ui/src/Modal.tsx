@@ -14,6 +14,10 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  /** Blocks the backdrop click, the X button, and Escape — for while a
+   * request triggered from inside the modal is still in flight, so it can't
+   * be dismissed mid-submit with no indication anything was happening. */
+  closeDisabled?: boolean;
 }
 
 export function Modal({
@@ -23,17 +27,22 @@ export function Modal({
   children,
   footer,
   className,
+  closeDisabled = false,
 }: ModalProps): React.JSX.Element | null {
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape' && !closeDisabled) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, onClose, closeDisabled]);
 
   if (!open) return null;
+
+  const requestClose = (): void => {
+    if (!closeDisabled) onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -41,7 +50,7 @@ export function Modal({
         type="button"
         aria-label="Cerrar"
         className="animate-fade-in absolute inset-0 bg-neutral-950/60"
-        onClick={onClose}
+        onClick={requestClose}
       />
       <div
         role="dialog"
@@ -54,7 +63,13 @@ export function Modal({
       >
         <div className="mb-3 flex items-center justify-between gap-4">
           <h2 className="text-text-primary text-base font-semibold">{title}</h2>
-          <IconButton size="sm" variant="ghost" aria-label="Cerrar" onClick={onClose}>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            aria-label="Cerrar"
+            disabled={closeDisabled}
+            onClick={requestClose}
+          >
             <X size={16} />
           </IconButton>
         </div>

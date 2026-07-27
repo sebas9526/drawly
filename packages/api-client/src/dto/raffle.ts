@@ -22,6 +22,10 @@ export interface RaffleDto {
    * afterwards (absent from UpdateRaffleRequest). */
   starting_number: number;
   draw_date: string;
+  /** Optional scheduled activation: when set, the raffle publishes itself
+   * automatically once this moment passes (still requires tickets to
+   * already be generated). null means "no schedule" — publish manually. */
+  publish_at: string | null;
   status: RaffleStatus;
   public_slug: string;
   created_at: string;
@@ -36,6 +40,7 @@ export interface CreateRaffleRequest {
   total_tickets: number;
   starting_number?: number;
   draw_date: string;
+  publish_at?: string | undefined;
 }
 
 export type UpdateRaffleRequest = Partial<Omit<CreateRaffleRequest, 'starting_number'>>;

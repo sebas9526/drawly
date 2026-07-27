@@ -24,6 +24,11 @@ class RaffleCreate(BaseModel):
     # RaffleUpdate, which deliberately has no starting_number field.
     starting_number: Literal[0, 1] = 1
     draw_date: datetime
+    # Optional scheduled activation. When set, the raffle publishes itself
+    # automatically once this moment passes (still requires tickets to
+    # already be generated — same precondition as a manual publish). Leave
+    # unset to keep today's fully-manual "click Publicar" behavior.
+    publish_at: datetime | None = None
 
 
 class RaffleUpdate(BaseModel):
@@ -35,6 +40,7 @@ class RaffleUpdate(BaseModel):
     ticket_price: Decimal | None = Field(default=None, ge=0)
     total_tickets: int | None = Field(default=None, ge=1, le=100_000)
     draw_date: datetime | None = None
+    publish_at: datetime | None = None
 
 
 class RaffleRead(BaseModel):
@@ -48,6 +54,7 @@ class RaffleRead(BaseModel):
     total_tickets: int
     starting_number: int
     draw_date: datetime
+    publish_at: datetime | None
     status: RaffleStatus
     public_slug: str
     created_at: datetime
@@ -66,6 +73,7 @@ class RaffleRead(BaseModel):
             total_tickets=raffle.total_tickets,
             starting_number=raffle.starting_number,
             draw_date=raffle.draw_date,
+            publish_at=raffle.publish_at,
             status=raffle.status,
             public_slug=raffle.public_slug,
             created_at=raffle.created_at,

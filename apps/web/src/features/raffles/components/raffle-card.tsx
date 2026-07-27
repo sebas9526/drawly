@@ -7,7 +7,7 @@ import { Button } from '@drawly/ui/Button';
 import { Card } from '@drawly/ui/Card';
 import { ProgressBar } from '@drawly/ui/ProgressBar';
 import { StatusBadge } from '@drawly/ui/StatusBadge';
-import { Calendar, Copy, ExternalLink, Pencil, Rocket, Ticket, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Copy, ExternalLink, Pencil, Rocket, Ticket, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 import { ROUTES } from '@drawly/constants';
@@ -55,6 +55,11 @@ export function RaffleCard({
           <p className="text-text-muted flex items-center gap-1 text-xs">
             <Calendar size={12} /> Sorteo: {formatDrawDate(raffle.draw_date)}
           </p>
+          {raffle.status === 'draft' && raffle.publish_at && (
+            <p className="text-text-muted flex items-center gap-1 text-xs">
+              <Clock size={12} /> Se activa: {formatDrawDate(raffle.publish_at)}
+            </p>
+          )}
         </div>
 
         <ActionMenu

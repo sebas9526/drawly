@@ -18,3 +18,13 @@ class RaffleNotPublishableError(ConflictError):
 
     def __init__(self, message: str = "Raffle cannot be published in its current state.") -> None:
         super().__init__(message)
+
+
+class RaffleHasParticipantsError(ConflictError):
+    """A raffle with tickets already assigned to participants cannot be
+    deleted (docs/02-architecture/DOMAIN_MODEL.md)."""
+
+    def __init__(
+        self, message: str = "Raffle has tickets with participants and cannot be deleted."
+    ) -> None:
+        super().__init__(message)

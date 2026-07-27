@@ -23,6 +23,7 @@ class RaffleService:
             total_tickets=data.total_tickets,
             starting_number=data.starting_number,
             draw_date=data.draw_date,
+            publish_at=data.publish_at,
             status=RaffleStatus.DRAFT,
             public_slug=public_slug,
         )
@@ -68,4 +69,6 @@ class RaffleService:
             raffle.total_tickets = data.total_tickets
         if data.draw_date is not None:
             raffle.draw_date = data.draw_date
+        if data.publish_at is not None:
+            raffle.publish_at = data.publish_at
         return raffle

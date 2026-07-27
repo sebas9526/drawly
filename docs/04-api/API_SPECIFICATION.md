@@ -139,7 +139,8 @@ Request
   "ticket_price": 10000,
   "total_tickets": 100,
   "starting_number": 1,
-  "draw_date": "2026-08-01T19:00:00"
+  "draw_date": "2026-08-01T19:00:00",
+  "publish_at": "2026-08-01T00:00:00"
 }
 
 `starting_number` is `0` or `1` (default `1`) — the first ticket number that
@@ -149,6 +150,13 @@ instead of `"001".."100"` once display-padded). **Immutable once set** — it is
 not present on `UpdateRaffleRequest` at all, so it can never change after
 creation, the same rule as `total_tickets` once tickets exist.
 
+`publish_at` is optional (default `null`). When omitted/`null`, the raffle
+publishes only via an explicit `PATCH /raffles/{id}/publish`, same as today.
+When set, an in-process periodic sweep publishes the raffle automatically
+once that moment passes — still subject to the same 409-if-no-tickets rule
+as a manual publish; if the schedule arrives before tickets exist, the sweep
+leaves the raffle in `draft` and retries on its next pass.
+
 ---
 
 ## Update Raffle
@@ -157,6 +165,8 @@ PUT /raffles/{id}
 
 Only allowed while the raffle is in `draft`. `starting_number` is not an
 accepted field — sending it returns 422 (the schema forbids unknown fields).
+`publish_at` can be set or changed (same semantics as on create); there is
+currently no way to explicitly clear it back to `null` via this endpoint.
 
 ---
 

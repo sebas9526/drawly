@@ -17,7 +17,7 @@ import { StatCard } from '@drawly/ui/StatCard';
 import { StatusBadge } from '@drawly/ui/StatusBadge';
 import { useDisclosure } from '@drawly/ui/use-disclosure';
 import { BadgeCheck, CalendarClock, Sparkles, Ticket, UserCog, Users } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { ROUTES } from '@drawly/constants';
 
@@ -55,6 +55,7 @@ export function DashboardPage(): React.JSX.Element {
   const { data, isLoading, isError, error } = useDashboardOverview();
   const { data: raffles } = useRaffles();
   const createRaffleModal = useDisclosure();
+  const [createRafflePending, setCreateRafflePending] = useState(false);
 
   const publicRaffleHref = useMemo(() => {
     const published = raffles?.find((raffle) => raffle.status !== 'draft');
@@ -81,10 +82,11 @@ export function DashboardPage(): React.JSX.Element {
       <Modal
         open={createRaffleModal.isOpen}
         onClose={createRaffleModal.close}
+        closeDisabled={createRafflePending}
         title="Nueva rifa"
         className="max-w-xl"
       >
-        <RaffleForm onDone={createRaffleModal.close} />
+        <RaffleForm onDone={createRaffleModal.close} onPendingChange={setCreateRafflePending} />
       </Modal>
 
       {isLoading && (

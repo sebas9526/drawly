@@ -223,6 +223,9 @@ class TicketUseCases:
     async def count_for_raffle(self, raffle_id: uuid.UUID) -> int:
         return await self._repository.count_by_raffle(raffle_id)
 
+    async def count_with_participant_for_raffle(self, raffle_id: uuid.UUID) -> int:
+        return await self._repository.count_with_participant_by_raffle(raffle_id)
+
     async def status_counts(self, raffle_id: uuid.UUID) -> dict[TicketStatus, int]:
         return await self._repository.status_counts(raffle_id)
 

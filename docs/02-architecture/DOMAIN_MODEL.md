@@ -75,6 +75,7 @@ Represents a raffle created by an organizer.
 - totalTickets
 - startingNumber
 - drawDate
+- publishAt
 - status
 - publicSlug
 - createdAt
@@ -84,6 +85,14 @@ Represents a raffle created by an organizer.
 > generated, so a 100-ticket raffle can produce `"00".."99"` instead of the
 > default `"001".."100"`. Set at creation only — immutable afterwards, same
 > rule as `totalTickets` once tickets exist.
+>
+> `publishAt` is an optional scheduled activation date, settable at creation
+> and changeable via update. `null` (default) means today's behavior: the
+> organizer publishes manually. When set, an in-process periodic sweep
+> publishes the raffle automatically once that moment passes, subject to the
+> same precondition as a manual publish — tickets must already be generated.
+> If the schedule arrives before tickets exist, the sweep skips the raffle
+> (leaving it Draft) and retries on its next pass rather than failing.
 
 ### Relationships
 
@@ -112,7 +121,8 @@ Represents a numbered ticket inside a raffle.
 > Ticket generation is an **explicit action** (`POST /raffles/{id}/tickets`),
 > intentionally decoupled from raffle creation so the numbering/format can be
 > reconfigured before publishing. `expiresAt` records reservation expiry (set on
-> reserve); automatic release of expired reservations is future work.
+> reserve); an in-process periodic sweep releases expired reservations back to
+> Available automatically.
 > `number` starts at the raffle's `startingNumber` (`0` or `1`), so it may be
 > `0` for a raffle configured to start at zero.
 
@@ -288,7 +298,7 @@ Tickets should always be managed through a Raffle.
 
 Draft
 
-↓
+↓ (manual publish, or automatic once `publishAt` passes — both require tickets to already exist)
 
 Published
 
@@ -343,6 +353,9 @@ Available
 
 - A raffle must have at least one ticket.
 - A raffle cannot be published without generated tickets.
+- A raffle may optionally schedule its own activation via `publishAt`; a
+  periodic sweep publishes it automatically once that moment passes,
+  subject to the same "tickets must exist" rule as a manual publish.
 - A raffle cannot be deleted once tickets have participants.
 - A closed raffle cannot receive new reservations.
 - An archived raffle becomes read-only.

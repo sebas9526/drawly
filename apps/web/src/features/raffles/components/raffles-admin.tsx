@@ -22,6 +22,7 @@ export function RafflesAdmin(): React.JSX.Element {
   const [editing, setEditing] = useState<RaffleDto | null>(null);
   const [deleting, setDeleting] = useState<RaffleDto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [formPending, setFormPending] = useState(false);
   const form = useDisclosure();
 
   const { data, isLoading, isError, error } = useRaffles({ search: search.trim() || undefined });
@@ -70,10 +71,16 @@ export function RafflesAdmin(): React.JSX.Element {
       <Modal
         open={form.isOpen}
         onClose={closeForm}
+        closeDisabled={formPending}
         title={editing ? 'Editar rifa' : 'Nueva rifa'}
         className="max-w-xl"
       >
-        <RaffleForm key={editing?.id ?? 'new'} raffle={editing} onDone={closeForm} />
+        <RaffleForm
+          key={editing?.id ?? 'new'}
+          raffle={editing}
+          onDone={closeForm}
+          onPendingChange={setFormPending}
+        />
       </Modal>
 
       <ConfirmDialog
