@@ -32,4 +32,8 @@ COPY . .
 RUN uv sync --no-dev
 EXPOSE 8000
 ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Shell form (not exec-array) so ${PORT:-8000} actually expands: platforms
+# like Render inject their own PORT and health-check that exact port, which
+# doesn't match a hardcoded 8000. Falls back to 8000 when PORT is unset (e.g.
+# docker-compose, which never sets it and expects 8000 — see docker-compose.yml).
+CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4"]
