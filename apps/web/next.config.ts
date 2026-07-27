@@ -7,9 +7,11 @@ const nextConfig: NextConfig = {
     '@drawly/api-client',
     '@drawly/config',
     '@drawly/constants',
+    '@drawly/hooks',
     '@drawly/types',
     '@drawly/ui',
     '@drawly/utils',
+    '@drawly/validators',
   ],
 };
 

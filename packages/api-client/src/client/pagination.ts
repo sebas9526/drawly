@@ -1,10 +1,16 @@
 import type { PaginatedResult } from './response';
 
-const DEFAULT_PAGE_SIZE = 200;
+// Matches the `page_size` ceiling (`le=100`) every admin/report list endpoint
+// enforces (tickets, participants, collaborators, raffles, analytics
+// collaborators/participants) — the public tickets endpoint allows more
+// (le=1000) but 100 is still valid there, just slightly more requests.
+// Passing a larger `pageSize` explicitly for an endpoint with a higher
+// ceiling is fine; this default must never exceed the *lowest* ceiling.
+const DEFAULT_PAGE_SIZE = 100;
 // Hard safety ceiling: at DEFAULT_PAGE_SIZE this covers 100,000 rows (the
 // platform's own max, e.g. total_tickets) without ever looping unbounded if
 // `total` were ever wrong.
-const MAX_PAGES = 500;
+const MAX_PAGES = 1000;
 
 /**
  * Fetches every page of a paginated endpoint and concatenates the results.

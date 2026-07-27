@@ -3,7 +3,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": ["dist/**", ".next/**"],
+      // NEXT_PUBLIC_API_URL is inlined into the client bundle at build time.
+      // Declared here so Turborepo's cache key (and Vercel Remote Cache) treat
+      // a build against a different API URL as a cache miss, instead of
+      // silently reusing a bundle baked for the wrong backend.
+      "env": ["NEXT_PUBLIC_API_URL"]
     },
     "dev": {
       "cache": false,

@@ -3,7 +3,7 @@
 import { Menu, PanelLeftClose, PanelLeftOpen, Search, Ticket } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ROUTES } from '@drawly/constants';
 import { useLocalStorage } from '@drawly/hooks';
@@ -12,6 +12,7 @@ import { Badge } from '@drawly/ui/Badge';
 import { Breadcrumb, type BreadcrumbItem } from '@drawly/ui/Breadcrumb';
 import { Dropdown } from '@drawly/ui/Dropdown';
 import { IconButton } from '@drawly/ui/IconButton';
+import { Spinner } from '@drawly/ui/Spinner';
 import { ThemeToggle } from '@drawly/ui/ThemeToggle';
 import { cn } from '@drawly/utils';
 
@@ -32,26 +33,68 @@ function Logo({ collapsed }: { collapsed: boolean }): React.JSX.Element {
   );
 }
 
-function SidebarNav({ collapsed }: { collapsed: boolean }): React.JSX.Element {
+function SidebarNav({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}): React.JSX.Element {
   const pathname = usePathname();
+  // Tracks the item just clicked so it can show a spinner until the route
+  // actually changes — Link navigation has no built-in "pending" affordance,
+  // so without this a click looks like nothing happened (and invites
+  // clicking around while the page is still loading).
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
       {NAV_MAIN.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const pending = pendingHref === item.href && !active;
+        // While one item is navigating, every other item is disabled — a
+        // second click on a different item mid-navigation used to fire a
+        // second, silently-competing route change with no indication either
+        // one was even happening.
+        const disabled = pendingHref !== null && !pending && !active;
         const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             title={collapsed ? item.label : undefined}
+            aria-current={active ? 'page' : undefined}
+            aria-busy={pending}
+            aria-disabled={disabled}
+            tabIndex={disabled ? -1 : undefined}
+            onClick={(event) => {
+              if (disabled) {
+                event.preventDefault();
+                return;
+              }
+              if (!active) setPendingHref(item.href);
+              onNavigate?.();
+            }}
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               active
                 ? 'bg-primary/10 text-primary'
-                : 'text-text-secondary hover:bg-muted hover:text-text-primary',
+                : pending
+                  ? 'bg-muted text-text-primary'
+                  : disabled
+                    ? 'text-text-muted/50 pointer-events-none cursor-not-allowed'
+                    : 'text-text-secondary hover:bg-muted hover:text-text-primary',
             )}
           >
-            <Icon size={18} className="shrink-0" />
+            {pending ? (
+              <Spinner size={18} className="shrink-0" />
+            ) : (
+              <Icon size={18} className="shrink-0" />
+            )}
             {!collapsed && item.label}
           </Link>
         );
@@ -121,7 +164,7 @@ function AppShellInner({ breadcrumbs, children }: AppShellProps): React.JSX.Elem
           />
           <aside className="border-border bg-surface animate-slide-in-right absolute inset-y-0 left-0 flex w-64 flex-col border-r">
             <Logo collapsed={false} />
-            <SidebarNav collapsed={false} />
+            <SidebarNav collapsed={false} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}

@@ -1,0 +1,41 @@
+# Render Blueprint — optional. Lets Render provision the API service with the
+# right settings from one "New Blueprint" import instead of clicking through
+# the dashboard by hand. See docs/deployment/DEPLOYMENT.md for the manual
+# dashboard steps (works identically without this file).
+#
+# Values marked `sync: false` are secrets/environment-specific and must be
+# filled in from the Render dashboard after the first deploy (Neon connection
+# strings, the real Vercel origin) — never committed here.
+services:
+  - type: web
+    name: drawly-api
+    env: docker
+    plan: starter
+    region: oregon
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: 'false'
+      # Neon connection strings (see docs/deployment/DEPLOYMENT.md — the two
+      # URLs need different SSL query params for asyncpg vs psycopg).
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      # Auto-generated once at first deploy; never reused across environments.
+      - key: JWT_SECRET
+        generateValue: true
+      # The deployed Vercel origin(s), comma-separated, no trailing slash.
+      - key: BACKEND_CORS_ORIGINS
+        sync: false
+      # Required for the auth cookie to survive the Vercel <-> Render
+      # cross-site round trip (see DEPLOYMENT.md, "CORS y autenticación").
+      - key: AUTH_COOKIE_SECURE
+        value: 'true'
+      - key: AUTH_COOKIE_SAMESITE
+        value: none

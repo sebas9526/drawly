@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # Hours a ticket reservation stays valid; persisted as expires_at on reserve.
     reservation_ttl_hours: int = 48
     # In-process sweep that releases expired reservations back to AVAILABLE (see
-    # app/modules/tickets/jobs). No external cron/queue required.
+    # app/modules/tickets/dependencies.sweep_expired_reservations). No external
+    # cron/queue required.
     reservation_sweep_enabled: bool = True
     reservation_sweep_interval_seconds: int = 60
 
