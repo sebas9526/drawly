@@ -70,3 +70,41 @@ async def test_delete_blocked_when_a_ticket_has_a_participant(api_client: AsyncC
 async def test_delete_unknown_raffle_returns_404(api_client: AsyncClient) -> None:
     response = await api_client.delete(f"{API}/raffles/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
+
+
+async def test_recreating_a_raffle_reuses_the_deleted_ones_slug(api_client: AsyncClient) -> None:
+    """Regression test: public_slug used to carry a table-wide DB UNIQUE
+    constraint, which outlived a soft-deleted raffle. Deleting a raffle and
+    creating a new one with the same title (same slug candidate) then 500'd
+    with an IntegrityError instead of succeeding — exists_slug already
+    excluded deleted rows at the app layer, but the DB constraint didn't."""
+    first = await api_client.post(
+        f"{API}/raffles",
+        json={
+            "title": "Rifa duplicada",
+            "description": "",
+            "prize": "Premio",
+            "ticket_price": 1000,
+            "total_tickets": 3,
+            "draw_date": "2026-08-01T19:00:00+00:00",
+        },
+    )
+    assert first.status_code == 201, first.text
+    first_data = first.json()["data"]
+
+    deleted = await api_client.delete(f"{API}/raffles/{first_data['id']}")
+    assert deleted.status_code == 200
+
+    second = await api_client.post(
+        f"{API}/raffles",
+        json={
+            "title": "Rifa duplicada",
+            "description": "",
+            "prize": "Premio",
+            "ticket_price": 1000,
+            "total_tickets": 3,
+            "draw_date": "2026-08-01T19:00:00+00:00",
+        },
+    )
+    assert second.status_code == 201, second.text
+    assert second.json()["data"]["public_slug"] == first_data["public_slug"]

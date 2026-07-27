@@ -16,7 +16,14 @@
     },
     "lint": {},
     "test": {},
-    "typecheck": {},
+    // Only apps/web has both a "build" and "typecheck" script, and its
+    // typecheck (tsc --noEmit) reads .next/types/**, which only `next build`
+    // generates. Without this, Turbo runs both tasks in parallel and
+    // typecheck can race ahead of a half-written .next directory. No-op for
+    // every other package (none define a "build" script).
+    "typecheck": {
+      "dependsOn": ["build"]
+    },
     "format": {}
   }
 }

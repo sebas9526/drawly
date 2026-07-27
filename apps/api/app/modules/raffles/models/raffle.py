@@ -58,4 +58,9 @@ class Raffle(UUIDAuditBase, table=True):
         nullable=False,
         index=True,
     )
-    public_slug: str = Field(index=True, unique=True, max_length=120)
+    # Uniqueness is enforced at the application layer only (RaffleRepository.
+    # exists_slug + RaffleUseCases._unique_slug), scoped to non-deleted rows —
+    # same pattern as participants.phone. A DB-level UNIQUE constraint here
+    # would outlive a soft-deleted raffle and permanently block reusing its
+    # slug (see migration 0009_raffle_public_slug_not_unique).
+    public_slug: str = Field(index=True, max_length=120)
