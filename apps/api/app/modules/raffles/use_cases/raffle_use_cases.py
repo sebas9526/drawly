@@ -67,11 +67,13 @@ class RaffleUseCases:
         await self._session.commit()
 
     async def publish(self, raffle_id: uuid.UUID) -> Raffle:
-        """draft -> published. Requires generated tickets. Makes the raffle
+        """draft -> published. Requires generated tickets, and — if the raffle
+        has a scheduled publish_at — requires that date to have arrived (a
+        schedule is a hard gate against publishing early). Makes the raffle
         visible on the public portal."""
         raffle = await self.get(raffle_id)
         has_tickets = await self._tickets.count_for_raffle(raffle.id) > 0
-        self._service.ensure_can_publish(raffle, has_tickets=has_tickets)
+        self._service.ensure_can_publish(raffle, has_tickets=has_tickets, now=utcnow())
         self._service.publish(raffle)
         saved = await self._repository.save(raffle)
         await self._session.commit()

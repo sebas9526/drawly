@@ -55,7 +55,7 @@ def test_ensure_can_publish_requires_draft() -> None:
         public_slug="x",
     )
     with pytest.raises(RaffleNotPublishableError):
-        RaffleService.ensure_can_publish(raffle, has_tickets=True)
+        RaffleService.ensure_can_publish(raffle, has_tickets=True, now=datetime.now(UTC))
 
 
 def test_ensure_can_publish_requires_tickets() -> None:
@@ -72,7 +72,7 @@ def test_ensure_can_publish_requires_tickets() -> None:
         public_slug="x",
     )
     with pytest.raises(RaffleNotPublishableError):
-        RaffleService.ensure_can_publish(raffle, has_tickets=False)
+        RaffleService.ensure_can_publish(raffle, has_tickets=False, now=datetime.now(UTC))
 
 
 def test_publish_transitions_to_published() -> None:
@@ -87,6 +87,47 @@ def test_publish_transitions_to_published() -> None:
         status=RaffleStatus.DRAFT,
         public_slug="x",
     )
-    RaffleService.ensure_can_publish(raffle, has_tickets=True)
+    RaffleService.ensure_can_publish(raffle, has_tickets=True, now=datetime.now(UTC))
+    RaffleService.publish(raffle)
+    assert raffle.status is RaffleStatus.PUBLISHED
+
+
+def test_ensure_can_publish_blocks_manual_publish_before_the_schedule() -> None:
+    """Regression test: manual publish used to ignore publish_at entirely,
+    letting an admin jump a scheduled raffle live early — exactly what
+    happened in production (see conversation)."""
+    from datetime import datetime, timedelta
+
+    from app.modules.raffles.exceptions import RaffleNotPublishableError
+    from app.modules.raffles.models import Raffle
+
+    now = datetime(2026, 7, 28, tzinfo=UTC)
+    raffle = Raffle(
+        title="X",
+        total_tickets=10,
+        draw_date=datetime(2026, 9, 1, tzinfo=UTC),
+        publish_at=now + timedelta(days=4),
+        status=RaffleStatus.DRAFT,
+        public_slug="x",
+    )
+    with pytest.raises(RaffleNotPublishableError):
+        RaffleService.ensure_can_publish(raffle, has_tickets=True, now=now)
+
+
+def test_ensure_can_publish_allows_manual_publish_once_the_schedule_arrives() -> None:
+    from datetime import datetime, timedelta
+
+    from app.modules.raffles.models import Raffle
+
+    now = datetime(2026, 7, 28, tzinfo=UTC)
+    raffle = Raffle(
+        title="X",
+        total_tickets=10,
+        draw_date=datetime(2026, 9, 1, tzinfo=UTC),
+        publish_at=now - timedelta(minutes=1),
+        status=RaffleStatus.DRAFT,
+        public_slug="x",
+    )
+    RaffleService.ensure_can_publish(raffle, has_tickets=True, now=now)
     RaffleService.publish(raffle)
     assert raffle.status is RaffleStatus.PUBLISHED

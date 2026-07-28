@@ -42,6 +42,10 @@ export function RaffleCard({
   const soldPct = total > 0 ? (paid / total) * 100 : 0;
   const presentation = RAFFLE_STATUS_PRESENTATION[raffle.status];
   const canViewPortal = raffle.status !== 'draft';
+  // The backend hard-blocks publishing before this date (RaffleService.
+  // ensure_can_publish) — mirrored here so the menu item doesn't invite a
+  // click that only comes back as a 409.
+  const isScheduledForLater = raffle.publish_at != null && new Date(raffle.publish_at) > new Date();
 
   return (
     <Card className="flex flex-col gap-4 p-5 transition-shadow hover:shadow-md">
@@ -70,7 +74,7 @@ export function RaffleCard({
               label: 'Publicar',
               icon: <Rocket size={14} />,
               onSelect: () => publish.mutate(raffle.id),
-              disabled: raffle.status !== 'draft',
+              disabled: raffle.status !== 'draft' || isScheduledForLater,
             },
             {
               label: 'Ver portal',

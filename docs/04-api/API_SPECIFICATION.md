@@ -200,14 +200,10 @@ Soft Delete
 
 PATCH /raffles/{id}/publish
 
----
-
-## Publish Raffle
-
-PATCH /raffles/{id}/publish
-
 `draft → published`. Requires generated tickets (409 otherwise). Makes the raffle
-visible on the public portal.
+visible on the public portal. If the raffle has a `publish_at` schedule, this
+is also rejected (409) until that moment arrives — the schedule is a hard
+gate, not just a convenience for auto-publishing; it cannot be jumped early.
 
 ---
 

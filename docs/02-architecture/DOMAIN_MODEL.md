@@ -88,11 +88,14 @@ Represents a raffle created by an organizer.
 >
 > `publishAt` is an optional scheduled activation date, settable at creation
 > and changeable via update. `null` (default) means today's behavior: the
-> organizer publishes manually. When set, an in-process periodic sweep
-> publishes the raffle automatically once that moment passes, subject to the
-> same precondition as a manual publish — tickets must already be generated.
-> If the schedule arrives before tickets exist, the sweep skips the raffle
-> (leaving it Draft) and retries on its next pass rather than failing.
+> organizer publishes manually, whenever they choose. When set, it is a hard
+> gate: the raffle cannot go live — manually or automatically — before that
+> moment, even if an organizer clicks Publish early (409). Once the moment
+> passes, an in-process periodic sweep publishes the raffle automatically,
+> subject to the same precondition as a manual publish — tickets must
+> already be generated. If the schedule arrives before tickets exist, the
+> sweep skips the raffle (leaving it Draft) and retries on its next pass
+> rather than failing.
 
 ### Relationships
 
@@ -355,7 +358,9 @@ Available
 - A raffle cannot be published without generated tickets.
 - A raffle may optionally schedule its own activation via `publishAt`; a
   periodic sweep publishes it automatically once that moment passes,
-  subject to the same "tickets must exist" rule as a manual publish.
+  subject to the same "tickets must exist" rule as a manual publish. The
+  schedule is a hard gate — a manual publish before that moment is also
+  rejected (409), not just skipped by the sweep.
 - A raffle cannot be deleted once tickets have participants.
 - A closed raffle cannot receive new reservations.
 - An archived raffle becomes read-only.
