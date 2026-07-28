@@ -25,6 +25,8 @@ async def _create_raffle(client: AsyncClient, total_tickets: int = 3) -> str:
 
 async def _generate_and_list_tickets(client: AsyncClient, raffle_id: str) -> list[dict[str, Any]]:
     await client.post(f"{API}/raffles/{raffle_id}/tickets")
+    # Tickets can only be reserved/assigned once the raffle is published.
+    await client.patch(f"{API}/raffles/{raffle_id}/publish")
     response = await client.get(f"{API}/tickets", params={"raffle_id": raffle_id, "page_size": 100})
     return list(response.json()["data"])
 

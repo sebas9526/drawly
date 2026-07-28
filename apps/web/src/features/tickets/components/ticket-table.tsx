@@ -20,6 +20,12 @@ interface TicketTableProps {
   pendingTicketId: string | null;
   selection: DataTableSelection;
   emptyDescription?: string | undefined;
+  /** False while the raffle isn't published yet (still draft, including one
+   * waiting on a scheduled publish_at) — the backend rejects reserve/pay/
+   * assign-participant in that state, so those actions are disabled here
+   * instead of inviting a click that only comes back as an error. Cancelling
+   * a reservation / removing a participant stays allowed either way. */
+  raffleIsOpen: boolean;
   onReserve: (ticketId: string) => void;
   onCancel: (ticketId: string) => void;
   onPay: (ticketId: string) => void;
@@ -34,6 +40,7 @@ export function TicketTable({
   pendingTicketId,
   selection,
   emptyDescription,
+  raffleIsOpen,
   onReserve,
   onCancel,
   onPay,
@@ -76,11 +83,15 @@ export function TicketTable({
       render: (ticket) => {
         const isPending = pendingTicketId === ticket.id;
         const isLocked = ticket.status === 'paid' || ticket.status === 'winner';
+        // Assigning a *new* participant needs the raffle open; removing one
+        // stays allowed regardless (mirrors the backend: only the forward
+        // action is gated).
+        const blockedByRaffle = !raffleIsOpen && !ticket.participant_id;
         return (
           <Select
             className="max-w-[12rem]"
             value={ticket.participant_id ?? ''}
-            disabled={isLocked || isPending}
+            disabled={isLocked || isPending || blockedByRaffle}
             aria-label="Asignar participante"
             onChange={(event) => {
               const value = event.target.value;
@@ -111,7 +122,7 @@ export function TicketTable({
             <Button
               size="sm"
               variant="outline"
-              disabled={isPending || ticket.status !== 'available'}
+              disabled={isPending || ticket.status !== 'available' || !raffleIsOpen}
               onClick={() => onReserve(ticket.id)}
             >
               Reservar
@@ -126,7 +137,7 @@ export function TicketTable({
             </Button>
             <Button
               size="sm"
-              disabled={isPending || ticket.status !== 'reserved'}
+              disabled={isPending || ticket.status !== 'reserved' || !raffleIsOpen}
               onClick={() => onPay(ticket.id)}
             >
               Pagar

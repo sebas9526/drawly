@@ -46,6 +46,8 @@ async def test_delete_raffle_without_participants_succeeds(api_client: AsyncClie
 async def test_delete_blocked_when_a_ticket_has_a_participant(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client)
     ticket = (await _generate_and_list_tickets(api_client, raffle_id))[0]
+    # Tickets can only be assigned once the raffle is published.
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
 
     participant = await api_client.post(
         f"{API}/participants", json={"full_name": "Ana Díaz", "phone": "3001234"}

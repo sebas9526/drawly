@@ -106,6 +106,7 @@ async def test_collaborators_isolated_per_user(client_factory: ClientFactory) ->
 async def test_reserve_credits_collaborator_and_validates_raffle(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client, total=3)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     collaborator = await _create_collaborator(api_client, raffle_id)
 
     tickets = (await api_client.get(f"{API}/tickets", params={"raffle_id": raffle_id})).json()[
@@ -132,6 +133,7 @@ async def test_reserve_credits_collaborator_and_validates_raffle(api_client: Asy
 async def test_collaborator_stats(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client, total=4)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     collaborator = await _create_collaborator(api_client, raffle_id)
     cid = collaborator["id"]
 

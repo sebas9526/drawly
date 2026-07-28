@@ -28,6 +28,10 @@ interface TicketsAdminProps {
    * the zero-padding width. */
   startingNumber: number;
   ticketPrice: number;
+  /** Whether the raffle is currently published — the backend rejects
+   * reserve/pay/assign-participant while it isn't (still draft, including
+   * one waiting on a scheduled activation date). */
+  raffleIsOpen: boolean;
 }
 
 export function TicketsAdmin({
@@ -35,6 +39,7 @@ export function TicketsAdmin({
   total,
   startingNumber,
   ticketPrice,
+  raffleIsOpen,
 }: TicketsAdminProps): React.JSX.Element {
   const [filter, setFilter] = useState<TicketStatusFilter>('all');
   const [search, setSearch] = useState('');
@@ -171,11 +176,19 @@ export function TicketsAdmin({
             onChange={(event) => setSearch(event.target.value)}
           />
 
+          {!raffleIsOpen && (
+            <Alert tone="info">
+              Esta rifa aún no está publicada: no se pueden reservar ni pagar boletas hasta que se
+              publique.
+            </Alert>
+          )}
+
           {selected.size > 0 && (
             <BulkActionBar
               selectedCount={selected.size}
               collaborators={collaborators ?? []}
               isPending={bulk.isPending}
+              raffleIsOpen={raffleIsOpen}
               onReserve={() => void runBulk('Reservar', bulk.bulkReserve)}
               onCancel={() => void runBulk('Cancelar', bulk.bulkCancel)}
               onMarkPaid={() => void runBulk('Marcar pagadas', bulk.bulkMarkPaid)}
@@ -205,6 +218,7 @@ export function TicketsAdmin({
               maxNumber={startingNumber + total - 1}
               participants={participants ?? []}
               pendingTicketId={pendingTicketId}
+              raffleIsOpen={raffleIsOpen}
               emptyDescription={
                 search || filter !== 'all'
                   ? 'No hay boletas que coincidan con tu búsqueda o filtro.'

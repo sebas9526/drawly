@@ -36,6 +36,18 @@ class TicketsAlreadyGeneratedError(ConflictError):
         super().__init__(message)
 
 
+class RaffleNotOpenForTicketsError(ConflictError):
+    """A ticket can only be reserved, paid, or assigned a participant once its
+    raffle is actually published — including while a raffle is waiting on a
+    scheduled publish_at. Admin pre-arranging on an unpublished raffle is not
+    allowed (see docs/02-architecture/DOMAIN_MODEL.md)."""
+
+    def __init__(
+        self, message: str = "This raffle is not published yet; tickets cannot be reserved."
+    ) -> None:
+        super().__init__(message)
+
+
 class InvalidTicketQuantityError(AppError):
     """400 — invalid requested generation quantity."""
 

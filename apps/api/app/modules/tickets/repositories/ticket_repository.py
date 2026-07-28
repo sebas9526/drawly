@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
 from app.database.base import utcnow
+from app.modules.raffles.models import Raffle, RaffleStatus
 from app.modules.tickets.models import Ticket, TicketStatus
 
 
@@ -16,6 +17,20 @@ class TicketRepository:
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def get_raffle_status(self, raffle_id: uuid.UUID) -> RaffleStatus | None:
+        """Reads the parent raffle's status directly, the same way the
+        dashboard/analytics modules read across module boundaries for a
+        cross-cutting concern — a plain read via the other module's model,
+        not a dependency on its use_cases/services/dependencies (which would
+        cycle back, since raffles already depends on tickets via
+        TicketProvisioning). None if the raffle doesn't exist / is deleted."""
+        statement = select(Raffle.status).where(
+            Raffle.id == raffle_id, col(Raffle.deleted_at).is_(None)
+        )
+        result = await self._session.execute(statement)
+        status = result.scalars().first()
+        return RaffleStatus(status) if status is not None else None
 
     async def add_all(self, tickets: Sequence[Ticket]) -> int:
         self._session.add_all(list(tickets))

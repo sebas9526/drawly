@@ -10,6 +10,9 @@ interface BulkActionBarProps {
   selectedCount: number;
   collaborators: CollaboratorDto[];
   isPending: boolean;
+  /** False while the raffle isn't published yet — see TicketTable's prop of
+   * the same name for why Reservar/Marcar pagadas are disabled here too. */
+  raffleIsOpen: boolean;
   onReserve: () => void;
   onCancel: () => void;
   onMarkPaid: () => void;
@@ -23,6 +26,7 @@ export function BulkActionBar({
   selectedCount,
   collaborators,
   isPending,
+  raffleIsOpen,
   onReserve,
   onCancel,
   onMarkPaid,
@@ -42,7 +46,7 @@ export function BulkActionBar({
           size="sm"
           variant="outline"
           leftIcon={<CheckCheck size={14} />}
-          disabled={isPending}
+          disabled={isPending || !raffleIsOpen}
           onClick={onReserve}
         >
           Reservar
@@ -60,7 +64,7 @@ export function BulkActionBar({
           size="sm"
           variant="outline"
           leftIcon={<Wallet size={14} />}
-          disabled={isPending}
+          disabled={isPending || !raffleIsOpen}
           onClick={onMarkPaid}
         >
           Marcar pagadas

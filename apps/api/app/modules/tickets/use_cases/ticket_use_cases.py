@@ -127,6 +127,7 @@ class TicketUseCases:
         ticket = await self._repository.get_for_update(ticket_id, owner_id=self._owner_id)
         if ticket is None:
             raise TicketNotFoundError()
+        self._service.ensure_raffle_open(await self._repository.get_raffle_status(ticket.raffle_id))
         await self._validate_collaborator(collaborator_id, ticket.raffle_id)
         self._service.reserve(
             ticket,
@@ -177,6 +178,7 @@ class TicketUseCases:
 
     async def mark_as_paid(self, ticket_id: uuid.UUID) -> Ticket:
         ticket = await self.get_ticket(ticket_id)
+        self._service.ensure_raffle_open(await self._repository.get_raffle_status(ticket.raffle_id))
         self._service.mark_as_paid(ticket, now=utcnow())
         saved = await self._repository.save(ticket)
         await self._session.commit()
@@ -184,6 +186,7 @@ class TicketUseCases:
 
     async def assign_participant(self, ticket_id: uuid.UUID, participant_id: uuid.UUID) -> Ticket:
         ticket = await self.get_ticket(ticket_id)
+        self._service.ensure_raffle_open(await self._repository.get_raffle_status(ticket.raffle_id))
         self._service.assign_participant(
             ticket, participant_id=participant_id, now=utcnow(), ttl=self._ttl
         )

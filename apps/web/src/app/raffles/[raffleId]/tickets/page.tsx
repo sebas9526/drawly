@@ -34,6 +34,7 @@ export default function RaffleTicketsPage(): React.JSX.Element {
             total={raffle.total_tickets}
             startingNumber={raffle.starting_number}
             ticketPrice={raffle.ticket_price}
+            raffleIsOpen={raffle.status === 'published'}
           />
           <CollaboratorStats raffleId={raffleId} />
         </>

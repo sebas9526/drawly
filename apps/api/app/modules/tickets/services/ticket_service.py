@@ -9,7 +9,9 @@ loads and persists; this class decides what is *allowed*.
 import uuid
 from datetime import datetime, timedelta
 
+from app.modules.raffles.models import RaffleStatus
 from app.modules.tickets.exceptions import (
+    RaffleNotOpenForTicketsError,
     TicketImmutableError,
     TicketNotAvailableError,
     TicketNotReservedError,
@@ -25,6 +27,17 @@ class TicketService:
     def ensure_mutable(ticket: Ticket) -> None:
         if ticket.status in _IMMUTABLE_STATES:
             raise TicketImmutableError()
+
+    @staticmethod
+    def ensure_raffle_open(raffle_status: RaffleStatus | None) -> None:
+        """A ticket can only be reserved, paid, or assigned a participant once
+        its raffle is actually published — this blocks admin pre-arranging
+        (and self-service, though the public flow already 404s pre-publish)
+        on a raffle still in draft, including one waiting on a scheduled
+        publish_at. ``None`` (raffle missing/deleted) is treated the same as
+        not open."""
+        if raffle_status is not RaffleStatus.PUBLISHED:
+            raise RaffleNotOpenForTicketsError()
 
     @classmethod
     def reserve(

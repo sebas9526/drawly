@@ -103,6 +103,7 @@ async def test_tickets_cannot_be_generated_twice(api_client: AsyncClient) -> Non
 async def test_list_available_only_returns_available(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client, total_tickets=3)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     tickets = await _tickets(api_client, raffle_id)
     await api_client.patch(f"{API}/tickets/{tickets[0]['id']}/reserve", json={})
 
@@ -116,6 +117,7 @@ async def test_list_available_only_returns_available(api_client: AsyncClient) ->
 async def test_reserve_then_reserve_again_conflicts(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     ticket_id = (await _tickets(api_client, raffle_id))[0]["id"]
 
     first = await api_client.patch(f"{API}/tickets/{ticket_id}/reserve", json={})
@@ -130,6 +132,7 @@ async def test_reserve_then_reserve_again_conflicts(api_client: AsyncClient) -> 
 async def test_cancel_returns_ticket_to_available(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     ticket_id = (await _tickets(api_client, raffle_id))[0]["id"]
     await api_client.patch(f"{API}/tickets/{ticket_id}/reserve", json={})
 
@@ -144,6 +147,7 @@ async def test_cancel_returns_ticket_to_available(api_client: AsyncClient) -> No
 async def test_paid_ticket_cannot_be_reserved(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client)
     await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+    await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
     ticket_id = (await _tickets(api_client, raffle_id))[0]["id"]
 
     await api_client.patch(f"{API}/tickets/{ticket_id}/reserve", json={})
