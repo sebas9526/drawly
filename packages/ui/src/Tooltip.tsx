@@ -21,7 +21,7 @@ export function Tooltip({ label, children }: TooltipProps): React.JSX.Element {
       {show && (
         <span
           role="tooltip"
-          className="animate-fade-in absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs text-white shadow-lg"
+          className="animate-fade-in bg-inverse text-inverse-fg absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs shadow-lg"
         >
           {label}
         </span>

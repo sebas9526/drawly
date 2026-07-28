@@ -159,7 +159,7 @@ function AppShellInner({ breadcrumbs, children }: AppShellProps): React.JSX.Elem
           <button
             type="button"
             aria-label="Cerrar menú"
-            className="animate-fade-in absolute inset-0 bg-neutral-950/50"
+            className="animate-fade-in bg-overlay/50 absolute inset-0"
             onClick={() => setMobileOpen(false)}
           />
           <aside className="border-border bg-surface animate-slide-in-right absolute inset-y-0 left-0 flex w-64 flex-col border-r">

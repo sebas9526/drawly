@@ -29,9 +29,9 @@ export const PUBLIC_TICKET_STATUS: Record<TicketStatus, TicketStatusStyle> = {
     selectable: false,
   },
   winner: {
-    label: 'No disponible',
-    dotClass: 'bg-text-muted',
-    cellClass: 'border-border/60 cursor-not-allowed opacity-60',
+    label: 'Ganadora',
+    dotClass: 'bg-prize',
+    cellClass: 'border-border/60 bg-prize/10 cursor-not-allowed',
     selectable: false,
   },
   cancelled: {

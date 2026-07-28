@@ -27,35 +27,56 @@ const preset: Omit<Config, 'content'> = {
   theme: {
     extend: {
       colors: {
-        // Palette scales
+        // Palette scales — full 50–900 run for every color, so any shade is
+        // reachable (e.g. bg-success-100) while components still default to
+        // the semantic DEFAULT/solid/fg trio below.
         indigo: scale('primary'),
         neutral: {
           ...scale('neutral'),
           950: 'rgb(var(--neutral-950) / <alpha-value>)',
         },
-        // Semantic — primary + states (with subtle scale shades where useful)
         primary: {
           ...scale('primary'),
           DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
           hover: 'rgb(var(--color-primary-hover) / <alpha-value>)',
           fg: 'rgb(var(--color-primary-fg) / <alpha-value>)',
         },
-        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
         success: {
+          ...scale('success'),
           DEFAULT: 'rgb(var(--color-success) / <alpha-value>)',
+          solid: 'rgb(var(--color-success-solid) / <alpha-value>)',
+          fg: 'rgb(var(--color-success-fg) / <alpha-value>)',
           soft: 'rgb(var(--success-100) / <alpha-value>)',
         },
         warning: {
+          ...scale('warning'),
           DEFAULT: 'rgb(var(--color-warning) / <alpha-value>)',
+          solid: 'rgb(var(--color-warning-solid) / <alpha-value>)',
+          fg: 'rgb(var(--color-warning-fg) / <alpha-value>)',
           soft: 'rgb(var(--warning-100) / <alpha-value>)',
         },
         danger: {
+          ...scale('danger'),
           DEFAULT: 'rgb(var(--color-danger) / <alpha-value>)',
+          solid: 'rgb(var(--color-danger-solid) / <alpha-value>)',
+          fg: 'rgb(var(--color-danger-fg) / <alpha-value>)',
           soft: 'rgb(var(--danger-100) / <alpha-value>)',
         },
         info: {
+          ...scale('info'),
           DEFAULT: 'rgb(var(--color-info) / <alpha-value>)',
+          solid: 'rgb(var(--color-info-solid) / <alpha-value>)',
+          fg: 'rgb(var(--color-info-fg) / <alpha-value>)',
           soft: 'rgb(var(--info-100) / <alpha-value>)',
+        },
+        // Prize/Winner — winner tickets, prize amounts, podium/draw-result
+        // moments. Never reuse `warning` for these.
+        prize: {
+          ...scale('prize'),
+          DEFAULT: 'rgb(var(--color-prize) / <alpha-value>)',
+          solid: 'rgb(var(--color-prize-solid) / <alpha-value>)',
+          fg: 'rgb(var(--color-prize-fg) / <alpha-value>)',
+          soft: 'rgb(var(--prize-100) / <alpha-value>)',
         },
         // Surfaces & text
         background: 'rgb(var(--color-background) / <alpha-value>)',
@@ -68,6 +89,13 @@ const preset: Omit<Config, 'content'> = {
         'text-primary': 'rgb(var(--color-text-primary) / <alpha-value>)',
         'text-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
         'text-muted': 'rgb(var(--color-text-muted) / <alpha-value>)',
+        // Theme-fixed (never swap light/dark) — dimming scrims and
+        // "always-inverse" chips like Tooltip.
+        overlay: 'rgb(var(--color-overlay) / <alpha-value>)',
+        inverse: {
+          DEFAULT: 'rgb(var(--color-inverse) / <alpha-value>)',
+          fg: 'rgb(var(--color-inverse-fg) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],

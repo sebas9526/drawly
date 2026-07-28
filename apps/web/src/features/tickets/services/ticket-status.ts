@@ -6,7 +6,7 @@ export const TICKET_STATUS_PRESENTATION: Record<TicketStatus, { label: string; t
   available: { label: 'Disponible', tone: 'success' },
   reserved: { label: 'Reservada', tone: 'warning' },
   paid: { label: 'Pagada', tone: 'info' },
-  winner: { label: 'Ganadora', tone: 'primary' },
+  winner: { label: 'Ganadora', tone: 'prize' },
   cancelled: { label: 'Cancelada', tone: 'neutral' },
 };
 

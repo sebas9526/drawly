@@ -1,16 +1,21 @@
 import { emailSchema, phoneSchema } from '@drawly/validators';
 import { z } from 'zod';
 
-/** Palette offered in the color picker (matches the design system accents). */
+/** Palette offered in the color picker — the -600 shade of each design-system
+ * accent (primary, info, success, prize, danger) plus three extra accents
+ * for variety beyond the semantic tones. A collaborator's stored `color` is
+ * always a plain hex string (Collaborator.color), independent of these
+ * tokens — existing collaborators keep whatever hex they already have, this
+ * array only affects the picker shown when choosing/changing a color. */
 export const COLLABORATOR_COLORS = [
-  '#4F46E5',
-  '#0EA5E9',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#EC4899',
-  '#8B5CF6',
-  '#14B8A6',
+  '#5B3FDB', // primary-600
+  '#0284C7', // info-600
+  '#059669', // success-600
+  '#A66F10', // prize-600
+  '#DC2626', // danger-600
+  '#DB2777', // pink-600 (extra accent)
+  '#7C3AED', // violet-600 (extra accent)
+  '#0D9488', // teal-600 (extra accent)
 ] as const;
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;

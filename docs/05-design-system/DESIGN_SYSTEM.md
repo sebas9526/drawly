@@ -1,6 +1,6 @@
 # Design System
 
-Drawly Design System — Version 2.0 (Sprint UI/UX)
+Drawly Design System — Version 3.0 (Sprint 11.5, "Minimalista Premium")
 
 Identidad visual moderna tipo SaaS (inspirada en la calidad de Linear, Vercel,
 Supabase, Stripe), con temas claro/oscuro, tokens de diseño y componentes
@@ -14,12 +14,19 @@ Todo el estilo se consume a través de **design tokens** (variables CSS mapeadas
 utilidades de Tailwind en `packages/config/tailwind-preset.ts`). No se permiten
 colores, tamaños, radios ni sombras hardcodeados.
 
-- **Paletas** (RGB, 50–900, independientes del tema): `primary` (Indigo/Violet),
-  `success` (Emerald), `warning` (Amber), `danger` (Red), `info` (Sky),
-  `neutral` (Slate).
+- **Paletas** (RGB, 50–900 completas, independientes del tema): `primary`
+  (Indigo/Violet), `success` (Emerald), `warning` (Amber), `danger` (Red),
+  `info` (Sky), `prize` (Gold — ganador/premio/podio, nunca reutilizar
+  `warning` para esto), `neutral` (Stone, gris cálido — sostiene el fondo
+  blanco cálido por defecto).
 - **Tokens semánticos** (cambian entre claro/oscuro): `background`, `surface`,
   `card`, `muted`, `border`, `border-strong`, `text-primary`, `text-secondary`,
-  `text-muted`, `primary` / `primary-hover` / `primary-fg`, `ring`.
+  `text-muted`, `primary` / `primary-hover` / `primary-fg`, `ring`. Cada tono
+  de estado (`success`/`warning`/`danger`/`info`/`prize`) expone además
+  `-solid` (relleno sólido, fijo entre temas) y `-fg` (texto legible sobre
+  ese relleno) — ver `ProgressBar`/`TONE_SOLID` en `packages/ui/src/tones.tsx`.
+  `overlay` e `inverse`/`inverse-fg` son fijos entre temas (scrims de
+  Modal/drawer, `Tooltip`).
 
 Definidos en `apps/web/src/app/globals.css` (`:root` = claro, `.dark` = oscuro).
 

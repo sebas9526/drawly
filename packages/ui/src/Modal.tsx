@@ -49,7 +49,7 @@ export function Modal({
       <button
         type="button"
         aria-label="Cerrar"
-        className="animate-fade-in absolute inset-0 bg-neutral-950/60"
+        className="animate-fade-in bg-overlay/60 absolute inset-0"
         onClick={requestClose}
       />
       <div
