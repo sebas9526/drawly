@@ -6,8 +6,9 @@ import { Button } from '@drawly/ui/Button';
 import { Field } from '@drawly/ui/Field';
 import { Input } from '@drawly/ui/Input';
 import { Select } from '@drawly/ui/Select';
+import { formatCurrency } from '@drawly/utils';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { useCreateRaffle, useUpdateRaffle } from '../hooks/use-raffles';
 import { createRaffleFormSchema, type CreateRaffleFormValues } from '../validators/raffle-form';
@@ -58,7 +59,7 @@ export function RaffleForm({
   onDone,
   onPendingChange,
 }: RaffleFormProps): React.JSX.Element {
-  const { register, handleSubmit } = useForm<CreateRaffleFormValues>({
+  const { register, handleSubmit, control } = useForm<CreateRaffleFormValues>({
     defaultValues: toDefaults(raffle),
   });
   const create = useCreateRaffle();
@@ -108,7 +109,19 @@ export function RaffleForm({
             <Input placeholder="Un carro 0km" {...register('prize', { required: true })} />
           </Field>
           <Field label="Precio por boleta">
-            <Input type="number" min={0} {...register('ticket_price')} />
+            <Controller
+              control={control}
+              name="ticket_price"
+              render={({ field }) => (
+                <Input
+                  inputMode="numeric"
+                  placeholder="$ 0"
+                  value={field.value ? formatCurrency(Number(field.value)) : ''}
+                  onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ''))}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
           </Field>
           <Field label="Total de boletas">
             <Input

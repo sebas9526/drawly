@@ -35,6 +35,7 @@ export default function RaffleTicketsPage(): React.JSX.Element {
             startingNumber={raffle.starting_number}
             ticketPrice={raffle.ticket_price}
             raffleIsOpen={raffle.status === 'published'}
+            canGenerateTickets={raffle.status === 'draft'}
           />
           <CollaboratorStats raffleId={raffleId} />
         </>

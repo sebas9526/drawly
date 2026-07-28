@@ -20,6 +20,7 @@ interface TicketTableProps {
   pendingTicketId: string | null;
   selection: DataTableSelection;
   emptyDescription?: string | undefined;
+  emptyAction?: React.ReactNode;
   /** False while the raffle isn't published yet (still draft, including one
    * waiting on a scheduled publish_at) — the backend rejects reserve/pay/
    * assign-participant in that state, so those actions are disabled here
@@ -40,6 +41,7 @@ export function TicketTable({
   pendingTicketId,
   selection,
   emptyDescription,
+  emptyAction,
   raffleIsOpen,
   onReserve,
   onCancel,
@@ -55,6 +57,7 @@ export function TicketTable({
         description={
           emptyDescription ?? 'No hay boletas para este filtro. Genera boletas desde la rifa.'
         }
+        action={emptyAction}
       />
     );
   }

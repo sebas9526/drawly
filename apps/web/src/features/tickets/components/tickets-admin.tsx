@@ -2,6 +2,7 @@
 
 import { getApiErrorMessage } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
+import { Button } from '@drawly/ui/Button';
 import { DashboardCard } from '@drawly/ui/DashboardCard';
 import { Loader } from '@drawly/ui/Loader';
 import { SearchInput } from '@drawly/ui/SearchInput';
@@ -12,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useRaffleCollaborators } from '@/features/collaborators';
 import { useParticipants } from '@/features/participants';
+import { useGenerateTickets } from '@/features/raffles';
 
 import { useBulkTicketActions, useTicketActions } from '../hooks/use-ticket-actions';
 import { useTickets } from '../hooks/use-tickets';
@@ -32,6 +34,10 @@ interface TicketsAdminProps {
    * reserve/pay/assign-participant while it isn't (still draft, including
    * one waiting on a scheduled activation date). */
   raffleIsOpen: boolean;
+  /** True while the raffle is still a draft — lets this page offer "Generar
+   * boletas" directly instead of only sending the organizer back to the
+   * raffle list card to do it. */
+  canGenerateTickets: boolean;
 }
 
 export function TicketsAdmin({
@@ -40,6 +46,7 @@ export function TicketsAdmin({
   startingNumber,
   ticketPrice,
   raffleIsOpen,
+  canGenerateTickets,
 }: TicketsAdminProps): React.JSX.Element {
   const [filter, setFilter] = useState<TicketStatusFilter>('all');
   const [search, setSearch] = useState('');
@@ -51,6 +58,7 @@ export function TicketsAdmin({
   const { data: collaborators } = useRaffleCollaborators(raffleId);
   const { reserve, cancel, pay, assignParticipant, unassignParticipant } = useTicketActions();
   const bulk = useBulkTicketActions();
+  const generate = useGenerateTickets();
 
   useEffect(() => {
     if (!bulkNotice) return;
@@ -206,6 +214,11 @@ export function TicketsAdmin({
           {actionError && (
             <Alert tone="danger">{getApiErrorMessage(actionError, 'La acción falló.')}</Alert>
           )}
+          {generate.isError && (
+            <Alert tone="danger">
+              {getApiErrorMessage(generate.error, 'No se pudieron generar las boletas.')}
+            </Alert>
+          )}
           {isLoading && <Loader label="Cargando boletas…" />}
           {isError && (
             <Alert tone="danger">
@@ -222,7 +235,20 @@ export function TicketsAdmin({
               emptyDescription={
                 search || filter !== 'all'
                   ? 'No hay boletas que coincidan con tu búsqueda o filtro.'
-                  : undefined
+                  : canGenerateTickets
+                    ? 'Esta rifa todavía no tiene boletas generadas.'
+                    : undefined
+              }
+              emptyAction={
+                allTickets.length === 0 && canGenerateTickets && !search && filter === 'all' ? (
+                  <Button
+                    leftIcon={<Ticket size={14} />}
+                    loading={generate.isPending}
+                    onClick={() => generate.mutate(raffleId)}
+                  >
+                    Generar boletas
+                  </Button>
+                ) : undefined
               }
               selection={{
                 selectedKeys: selected,

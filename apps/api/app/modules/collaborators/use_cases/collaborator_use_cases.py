@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -104,7 +104,15 @@ class CollaboratorUseCases:
         self._service.apply_update(collaborator, data)
         saved = await self._repository.save(collaborator)
         if data.raffle_ids is not None:
-            await self._require_owned_raffles(data.raffle_ids)
+            # Only newly-added ids need the ownership check — an id that was
+            # already linked stays valid even if it can no longer pass that
+            # check today (e.g. a legacy raffle with no owner_id from before
+            # auth existed). Re-validating unchanged links on every edit was
+            # a real bug: it made a collaborator with one such link
+            # permanently un-editable, even for unrelated fields.
+            current = await self._repository.list_raffle_ids_by_collaborators([collaborator_id])
+            added = set(data.raffle_ids) - set(current.get(collaborator_id, []))
+            await self._require_owned_raffles(added)
             await self._repository.set_raffles(collaborator_id, data.raffle_ids)
         await self._session.commit()
         return await self._to_read(saved)
@@ -174,6 +182,6 @@ class CollaboratorUseCases:
             raise RaffleNotFoundForCollaboratorError()
         return price
 
-    async def _require_owned_raffles(self, raffle_ids: Sequence[uuid.UUID]) -> None:
+    async def _require_owned_raffles(self, raffle_ids: Iterable[uuid.UUID]) -> None:
         for raffle_id in raffle_ids:
             await self._require_owned_raffle(raffle_id)
