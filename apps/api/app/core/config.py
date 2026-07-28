@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     database_url_sync: str = "postgresql+psycopg://drawly:drawly@localhost:5432/drawly"
 
     backend_cors_origins: str = "http://localhost:3000"
+    # Optional regex for origins that shouldn't require a BACKEND_CORS_ORIGINS
+    # edit on every deploy — e.g. Vercel gives every deployment (production
+    # included) its own unique URL in addition to the stable custom domain,
+    # and preview deployments get their own per-branch URL too. Matched via
+    # CORSMiddleware's allow_origin_regex, in addition to (not instead of)
+    # the exact allow_origins list above. None disables it (no regex match).
+    backend_cors_origin_regex: str | None = None
 
     # --- Auth (JWT in an httpOnly cookie) ---
     # Override JWT_SECRET in production via env. Dev default is fine locally.
