@@ -1,9 +1,20 @@
 import uuid
-from typing import Protocol
+from typing import NamedTuple, Protocol
+
+
+class TicketWinnerCandidate(NamedTuple):
+    """What the raffle aggregate needs to decide whether an entered ticket
+    number is a valid winner, without importing the tickets module's Ticket
+    model."""
+
+    ticket_id: uuid.UUID
+    participant_id: uuid.UUID | None
+    is_paid: bool
 
 
 class TicketProvisioning(Protocol):
-    """Port the raffle aggregate uses to provision its tickets.
+    """Port the raffle aggregate uses to provision its tickets and register a
+    winner.
 
     Dependency Inversion: the raffles domain depends on this abstraction, not on
     the tickets module. The tickets module's use case satisfies it structurally,
@@ -22,3 +33,11 @@ class TicketProvisioning(Protocol):
     async def count_for_raffle(self, raffle_id: uuid.UUID) -> int: ...
 
     async def count_with_participant_for_raffle(self, raffle_id: uuid.UUID) -> int: ...
+
+    async def find_winner_candidate(
+        self, raffle_id: uuid.UUID, number: int
+    ) -> TicketWinnerCandidate | None: ...
+
+    async def confirm_winner(self, ticket_id: uuid.UUID) -> None: ...
+
+    async def soft_delete_all_for_raffle(self, raffle_id: uuid.UUID) -> int: ...

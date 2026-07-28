@@ -14,6 +14,7 @@ from app.modules.tickets.exceptions import (
     RaffleNotOpenForTicketsError,
     TicketImmutableError,
     TicketNotAvailableError,
+    TicketNotPaidError,
     TicketNotReservedError,
 )
 from app.modules.tickets.models import Ticket, TicketStatus
@@ -148,4 +149,16 @@ class TicketService:
         ticket.status = TicketStatus.PAID
         ticket.sold_at = now
         ticket.expires_at = None  # a paid ticket no longer expires
+        return ticket
+
+    @staticmethod
+    def mark_as_winner(ticket: Ticket, *, now: datetime) -> Ticket:
+        """PAID -> WINNER. Deliberately does not go through ensure_mutable —
+        a paid ticket being IMMUTABLE is exactly the precondition here, not a
+        block. Only the raffle-level winner-registration flow calls this,
+        after confirming the ticket is paid (RaffleUseCases.register_winner)."""
+        if ticket.status is not TicketStatus.PAID:
+            raise TicketNotPaidError()
+        ticket.status = TicketStatus.WINNER
+        ticket.winner_at = now
         return ticket

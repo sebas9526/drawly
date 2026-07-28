@@ -28,9 +28,21 @@ class PublicRaffleView(BaseModel):
     available_count: int
     reserved_count: int
     paid_count: int
+    # Populated only once the raffle is CLOSED with a confirmed (paid) winner
+    # — never for an unresolved "sin ganador válido" attempt, and never
+    # phone/document, just enough for a public announcement.
+    winner_ticket_number: int | None = None
+    winner_participant_name: str | None = None
 
     @classmethod
-    def from_raffle(cls, raffle: Raffle, counts: dict[TicketStatus, int]) -> "PublicRaffleView":
+    def from_raffle(
+        cls,
+        raffle: Raffle,
+        counts: dict[TicketStatus, int],
+        *,
+        winner_ticket_number: int | None = None,
+        winner_participant_name: str | None = None,
+    ) -> "PublicRaffleView":
         return cls(
             public_slug=raffle.public_slug,
             title=raffle.title,
@@ -44,6 +56,28 @@ class PublicRaffleView(BaseModel):
             available_count=counts.get(TicketStatus.AVAILABLE, 0),
             reserved_count=counts.get(TicketStatus.RESERVED, 0),
             paid_count=counts.get(TicketStatus.PAID, 0),
+            winner_ticket_number=winner_ticket_number,
+            winner_participant_name=winner_participant_name,
+        )
+
+
+class PublicReferralRaffleView(BaseModel):
+    """One of a collaborator's published raffles, shown on their personal
+    referral link (/ref/{collaborator_id}) when they sell for more than one —
+    just enough to pick which one, no internal ids."""
+
+    public_slug: str
+    title: str
+    prize: str
+    cover_image: str | None
+
+    @classmethod
+    def from_raffle(cls, raffle: Raffle) -> "PublicReferralRaffleView":
+        return cls(
+            public_slug=raffle.public_slug,
+            title=raffle.title,
+            prize=raffle.prize,
+            cover_image=raffle.cover_image,
         )
 
 
@@ -94,8 +128,11 @@ class PublicReserveRequest(BaseModel):
     # ge=0: a raffle may start numbering at 0 (RaffleCreate.starting_number).
     ticket_number: int = Field(ge=0)
     participant: PublicParticipantInput
-    # Optional seller credited with the reservation; validated against the raffle.
-    collaborator_id: uuid.UUID | None = None
+    # Required (public flow only — the admin endpoint keeps it optional):
+    # every public reservation must be attributable to a seller, since that's
+    # who the organizer collects payment from. Still validated against the
+    # raffle in TicketUseCases._validate_collaborator.
+    collaborator_id: uuid.UUID
 
     def to_participant_create(self) -> ParticipantCreate:
         return ParticipantCreate(

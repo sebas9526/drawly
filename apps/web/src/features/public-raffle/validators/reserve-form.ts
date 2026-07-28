@@ -8,8 +8,9 @@ export const reserveFormSchema = z.object({
   phone: phoneSchema,
   email: emailSchema.or(z.literal('')),
   document: z.string(),
-  /** Optional collaborator (seller) id. */
-  collaborator_id: z.string(),
+  /** Collaborator (seller) id — required: every reservation must be
+   * attributable to a seller so the organizer knows who to collect from. */
+  collaborator_id: z.string().min(1, 'Selecciona quién vendió esta boleta'),
 });
 
 export interface ReserveFormValues {

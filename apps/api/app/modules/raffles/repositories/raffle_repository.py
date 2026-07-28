@@ -78,6 +78,26 @@ class RaffleRepository:
         result = await self._session.execute(statement)
         return list(result.scalars().all())
 
+    async def list_closed_past_cutoff(self, *, cutoff: datetime, limit: int = 500) -> list[Raffle]:
+        """CLOSED raffles whose ``closed_at`` is at or before ``cutoff``
+        (i.e. the grace period has elapsed), system-wide. Row-locked so the
+        cleanup sweep can't race anything else touching the raffle. Bounded
+        by ``limit`` per run, same reasoning as list_scheduled_to_publish."""
+        statement = (
+            select(Raffle)
+            .where(
+                Raffle.status == RaffleStatus.CLOSED,
+                col(Raffle.closed_at).is_not(None),
+                col(Raffle.closed_at) <= cutoff,
+                col(Raffle.deleted_at).is_(None),
+            )
+            .order_by(col(Raffle.closed_at).asc())
+            .limit(limit)
+            .with_for_update()
+        )
+        result = await self._session.execute(statement)
+        return list(result.scalars().all())
+
     async def save(self, raffle: Raffle) -> Raffle:
         raffle.updated_at = utcnow()
         self._session.add(raffle)

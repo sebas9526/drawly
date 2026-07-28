@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.database.session import get_session, get_session_factory
 from app.modules.raffles.models import Raffle
 from app.modules.raffles.repositories import RaffleRepository
@@ -56,3 +57,20 @@ async def sweep_scheduled_raffles() -> list[Raffle]:
             tickets=get_ticket_provisioning(session),
         )
         return await use_cases.publish_scheduled_raffles()
+
+
+async def sweep_closed_raffles() -> list[Raffle]:
+    """System-wide job (no request scope): opens its own session, soft-deletes
+    every CLOSED raffle (and its tickets) past its cleanup grace period, and
+    returns what it touched. Wired into the app lifespan's periodic scheduler
+    (see app/main.py) — not a route dependency."""
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        use_cases = RaffleUseCases(
+            session=session,
+            repository=RaffleRepository(session),
+            tickets=get_ticket_provisioning(session),
+        )
+        return await use_cases.cleanup_closed_raffles(
+            grace_hours=get_settings().raffle_cleanup_grace_hours
+        )

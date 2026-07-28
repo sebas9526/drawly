@@ -58,6 +58,19 @@ class Raffle(UUIDAuditBase, table=True):
         nullable=False,
         index=True,
     )
+    # Set only when a *valid* winner (a paid ticket) closes the raffle — the
+    # cleanup sweep (app/modules/raffles/dependencies.sweep_closed_raffles)
+    # soft-deletes the raffle and its tickets once this is far enough in the
+    # past (see settings.raffle_cleanup_grace_hours).
+    closed_at: datetime | None = Field(default=None, sa_type=TZ_DATETIME, nullable=True)
+    # Reflects the *last* winner-registration attempt, valid or not — not a
+    # dedicated "official winner" pointer. If status is CLOSED, the ticket
+    # this points to is the confirmed winner (its own status is WINNER). If
+    # status is still PUBLISHED and this is set, the last entered ticket
+    # number wasn't paid yet: an unresolved attempt, not a hard block — the
+    # organizer can retry with another number (see RaffleService.
+    # record_winner_attempt / close_with_winner).
+    winner_ticket_id: uuid.UUID | None = Field(default=None, foreign_key="tickets.id")
     # Uniqueness is enforced at the application layer only (RaffleRepository.
     # exists_slug + RaffleUseCases._unique_slug), scoped to non-deleted rows —
     # same pattern as participants.phone. A DB-level UNIQUE constraint here

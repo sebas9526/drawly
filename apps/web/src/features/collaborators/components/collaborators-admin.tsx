@@ -50,8 +50,16 @@ export function CollaboratorsAdmin(): React.JSX.Element {
     return (id: string): string | undefined => map.get(id);
   }, [raffles]);
 
-  const copyReferralLink = async (collaborator: CollaboratorDto): Promise<boolean> => {
-    const slug = raffleSlugById(collaborator.raffle_id);
+  const copyPersonalLink = async (collaborator: CollaboratorDto): Promise<void> => {
+    const url = `${window.location.origin}${ROUTES.REFERRAL(collaborator.id)}`;
+    await navigator.clipboard.writeText(url);
+  };
+
+  const copyRaffleLink = async (
+    collaborator: CollaboratorDto,
+    raffleId: string,
+  ): Promise<boolean> => {
+    const slug = raffleSlugById(raffleId);
     if (!slug) return false;
     const url = `${window.location.origin}${ROUTES.PUBLIC_RAFFLE(slug)}?ref=${collaborator.id}`;
     await navigator.clipboard.writeText(url);
@@ -175,7 +183,8 @@ export function CollaboratorsAdmin(): React.JSX.Element {
               onEdit={openEdit}
               onToggleActive={(c) => setActive.mutate({ id: c.id, isActive: !c.is_active })}
               onDelete={(id) => deleteCollaborator.mutate(id)}
-              onCopyLink={copyReferralLink}
+              onCopyPersonalLink={copyPersonalLink}
+              onCopyRaffleLink={copyRaffleLink}
             />
           )}
     </>

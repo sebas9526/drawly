@@ -1,11 +1,12 @@
 'use client';
 
 import { isApiError, type PublicReserveResult } from '@drawly/api-client';
+import { Alert } from '@drawly/ui/Alert';
 import { Card } from '@drawly/ui/Card';
 import { EmptyState } from '@drawly/ui/EmptyState';
 import { Skeleton } from '@drawly/ui/Skeleton';
-import { ThemeToggle } from '@drawly/ui/ThemeToggle';
-import { Ticket } from 'lucide-react';
+import { formatTicketNumber } from '@drawly/utils';
+import { PartyPopper, Ticket } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -18,28 +19,10 @@ import {
 import type { PublicTicketFilter } from '../services/ticket-status';
 import { reserveFormSchema, type ReserveFormValues } from '../validators/reserve-form';
 import { Confirmation } from './confirmation';
+import { PublicShell as Shell } from './public-shell';
 import { RaffleHeader } from './raffle-header';
 import { ReserveForm } from './reserve-form';
 import { TicketGrid } from './ticket-grid';
-
-function Shell({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="bg-background text-text-primary min-h-screen">
-      <header className="border-border bg-surface/80 sticky top-0 z-20 border-b backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between px-6">
-          <span className="text-text-primary flex items-center gap-2 font-semibold">
-            <span className="bg-primary text-primary-fg flex h-7 w-7 items-center justify-center rounded-lg">
-              <Ticket size={16} />
-            </span>
-            Drawly
-          </span>
-          <ThemeToggle />
-        </div>
-      </header>
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">{children}</main>
-    </div>
-  );
-}
 
 export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element {
   const raffleQuery = usePublicRaffle(slug);
@@ -112,7 +95,7 @@ export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element 
           email: values.email.trim() || undefined,
           document: values.document.trim() || undefined,
         },
-        collaborator_id: values.collaborator_id || undefined,
+        collaborator_id: values.collaborator_id,
       },
       { onSuccess: (result) => setConfirmation(result) },
     );
@@ -124,9 +107,42 @@ export function PublicRafflePage({ slug }: { slug: string }): React.JSX.Element 
       : 'No se pudo reservar. Intenta con otra boleta.'
     : null;
 
+  if (raffle.winner_ticket_number !== null) {
+    return (
+      <Shell>
+        <RaffleHeader raffle={raffle} />
+        <Card className="flex flex-col items-center gap-3 p-8 text-center">
+          <span className="bg-success/10 text-success flex h-14 w-14 items-center justify-center rounded-full">
+            <PartyPopper size={28} />
+          </span>
+          <p className="text-text-primary text-lg font-semibold">¡Esta rifa ya tiene ganador!</p>
+          <p className="text-text-secondary text-sm">
+            Boleta ganadora{' '}
+            <span className="text-primary font-mono font-semibold">
+              #{formatTicketNumber(raffle.winner_ticket_number, maxNumber)}
+            </span>
+            {raffle.winner_participant_name && (
+              <>
+                {' '}
+                —{' '}
+                <span className="text-text-primary font-medium">
+                  {raffle.winner_participant_name}
+                </span>
+              </>
+            )}
+          </p>
+        </Card>
+      </Shell>
+    );
+  }
+
   return (
     <Shell>
       <RaffleHeader raffle={raffle} />
+      <Alert tone="info">
+        Solo las boletas <strong>pagadas</strong> participan en el sorteo. Si reservas y no
+        completas el pago a tiempo, la boleta se libera automáticamente y no jugará.
+      </Alert>
       <Card className="p-5">
         {selected === null ? (
           <TicketGrid

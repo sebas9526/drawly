@@ -1,13 +1,26 @@
 import uuid
+from datetime import datetime, timedelta
+from typing import NamedTuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.base import utcnow
-from app.modules.raffles.exceptions import RaffleHasParticipantsError, RaffleNotFoundError
+from app.modules.raffles.exceptions import (
+    RaffleHasParticipantsError,
+    RaffleNotFoundError,
+    WinningTicketNotFoundError,
+)
 from app.modules.raffles.models import Raffle, RaffleStatus
 from app.modules.raffles.repositories import RaffleRepository
 from app.modules.raffles.schemas import RaffleCreate, RaffleUpdate
 from app.modules.raffles.services import RaffleService, TicketProvisioning
+
+
+class WinnerRegistrationResult(NamedTuple):
+    valid: bool
+    ticket_id: uuid.UUID
+    participant_id: uuid.UUID | None
+    winner_at: datetime | None
 
 
 class RaffleUseCases:
@@ -101,12 +114,63 @@ class RaffleUseCases:
         return published
 
     async def get_published_by_slug(self, slug: str) -> Raffle:
-        """Public lookup: only a published raffle is visible. Anything else
-        (draft, closed, archived, missing) is a 404 to avoid leaking drafts."""
+        """Public lookup: a published raffle is visible, and stays visible
+        once closed (read-only) so the winner announcement has somewhere to
+        show. Draft/archived/missing is a 404 to avoid leaking drafts."""
         raffle = await self._repository.get_by_slug(slug)
-        if raffle is None or raffle.status is not RaffleStatus.PUBLISHED:
+        if raffle is None or raffle.status not in (RaffleStatus.PUBLISHED, RaffleStatus.CLOSED):
             raise RaffleNotFoundError()
         return raffle
+
+    async def cleanup_closed_raffles(self, *, grace_hours: int) -> list[Raffle]:
+        """System-wide sweep: soft-deletes every CLOSED raffle (and its
+        tickets) once it's been closed for at least ``grace_hours``. Not
+        owner-scoped, same as publish_scheduled_raffles. Deliberately does
+        NOT reuse RaffleUseCases.delete() — that blocks on any ticket with a
+        participant, which is the expected, common case for a concluded
+        raffle; this is automatic post-raffle cleanup, not an accidental
+        delete to protect against."""
+        cutoff = utcnow() - timedelta(hours=grace_hours)
+        candidates = await self._repository.list_closed_past_cutoff(cutoff=cutoff)
+        cleaned: list[Raffle] = []
+        for raffle in candidates:
+            await self._tickets.soft_delete_all_for_raffle(raffle.id)
+            await self._repository.soft_delete(raffle)
+            cleaned.append(raffle)
+        if cleaned:
+            await self._session.commit()
+        return cleaned
+
+    async def register_winner(
+        self, raffle_id: uuid.UUID, ticket_number: int
+    ) -> WinnerRegistrationResult:
+        """Manual winner entry: looks up the ticket by number and, only if it
+        is already PAID, confirms it as the winner and closes the raffle in
+        one transaction. If it isn't paid, the attempt is still recorded
+        (Raffle.winner_ticket_id) but nothing closes — the organizer can just
+        try another number."""
+        raffle = await self.get(raffle_id)
+        self._service.ensure_open_for_winner(raffle)
+
+        candidate = await self._tickets.find_winner_candidate(raffle.id, ticket_number)
+        if candidate is None:
+            raise WinningTicketNotFoundError()
+
+        now = utcnow()
+        if candidate.is_paid:
+            await self._tickets.confirm_winner(candidate.ticket_id)
+            self._service.close_with_winner(raffle, candidate.ticket_id, now)
+        else:
+            self._service.record_winner_attempt(raffle, candidate.ticket_id)
+
+        await self._repository.save(raffle)
+        await self._session.commit()
+        return WinnerRegistrationResult(
+            valid=candidate.is_paid,
+            ticket_id=candidate.ticket_id,
+            participant_id=candidate.participant_id,
+            winner_at=now if candidate.is_paid else None,
+        )
 
     async def generate_tickets(self, raffle_id: uuid.UUID) -> int:
         """Explicit, idempotency-guarded generation (separate from raffle

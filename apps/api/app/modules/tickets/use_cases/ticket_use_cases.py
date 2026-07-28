@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.database.base import utcnow
+from app.modules.raffles.services import TicketWinnerCandidate
 from app.modules.tickets.exceptions import (
     CollaboratorNotFoundForTicketError,
     ParticipantNotFoundForTicketError,
@@ -229,6 +230,40 @@ class TicketUseCases:
     async def count_with_participant_for_raffle(self, raffle_id: uuid.UUID) -> int:
         return await self._repository.count_with_participant_by_raffle(raffle_id)
 
+    async def find_winner_candidate(
+        self, raffle_id: uuid.UUID, number: int
+    ) -> TicketWinnerCandidate | None:
+        ticket = await self._repository.get_by_raffle_and_number(raffle_id, number)
+        if ticket is None:
+            return None
+        return TicketWinnerCandidate(
+            ticket_id=ticket.id,
+            participant_id=ticket.participant_id,
+            is_paid=ticket.status is TicketStatus.PAID,
+        )
+
+    async def confirm_winner(self, ticket_id: uuid.UUID) -> None:
+        """Marks a ticket WINNER. Deliberately flushes but does not commit —
+        the caller (RaffleUseCases.register_winner) also closes the raffle in
+        the same transaction and owns the single commit, so a failure between
+        the two writes can't leave a confirmed-winner ticket on a raffle that
+        never actually closed."""
+        ticket = await self._repository.get(ticket_id)
+        if ticket is None:
+            raise TicketNotFoundError()
+        self._service.mark_as_winner(ticket, now=utcnow())
+        ticket.updated_at = utcnow()
+        self._session.add(ticket)
+        await self._session.flush()
+
+    async def soft_delete_all_for_raffle(self, raffle_id: uuid.UUID) -> int:
+        """Bulk cleanup for a concluded raffle. Its own atomic operation (no
+        cross-aggregate write in the same call), so it commits itself —
+        unlike ``confirm_winner`` above."""
+        deleted = await self._repository.soft_delete_by_raffle(raffle_id)
+        await self._session.commit()
+        return deleted
+
     async def status_counts(self, raffle_id: uuid.UUID) -> dict[TicketStatus, int]:
         return await self._repository.status_counts(raffle_id)
 
@@ -239,3 +274,9 @@ class TicketUseCases:
 
     async def get_by_number(self, raffle_id: uuid.UUID, number: int) -> Ticket | None:
         return await self._repository.get_by_raffle_and_number(raffle_id, number)
+
+    async def get_by_id(self, ticket_id: uuid.UUID) -> Ticket | None:
+        """Non-raising lookup (unlike get_ticket) — used by the public portal
+        to resolve a raffle's winner_ticket_id without a 404 if it's ever
+        missing."""
+        return await self._repository.get(ticket_id, owner_id=self._owner_id)

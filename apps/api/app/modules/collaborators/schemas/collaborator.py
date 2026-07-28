@@ -30,7 +30,7 @@ class CollaboratorBase(BaseModel):
 
 
 class CollaboratorCreate(CollaboratorBase):
-    raffle_id: uuid.UUID
+    raffle_ids: list[uuid.UUID] = Field(min_length=1)
     name: str = Field(min_length=1, max_length=150)
     phone: str | None = Field(default=None, max_length=30)
     email: str | None = Field(default=None, max_length=150)
@@ -40,6 +40,10 @@ class CollaboratorCreate(CollaboratorBase):
 
 
 class CollaboratorUpdate(CollaboratorBase):
+    # None = leave the raffle links untouched; a list replaces the whole set
+    # (never an incremental add/remove) — same semantics as
+    # CollaboratorRepository.set_raffles.
+    raffle_ids: list[uuid.UUID] | None = Field(default=None, min_length=1)
     name: str | None = Field(default=None, min_length=1, max_length=150)
     phone: str | None = Field(default=None, max_length=30)
     email: str | None = Field(default=None, max_length=150)
@@ -50,7 +54,7 @@ class CollaboratorUpdate(CollaboratorBase):
 
 class CollaboratorRead(BaseModel):
     id: uuid.UUID
-    raffle_id: uuid.UUID
+    raffle_ids: list[uuid.UUID]
     name: str
     phone: str | None
     email: str | None
@@ -61,10 +65,12 @@ class CollaboratorRead(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_entity(cls, collaborator: Collaborator) -> "CollaboratorRead":
+    def from_entity(
+        cls, collaborator: Collaborator, raffle_ids: list[uuid.UUID]
+    ) -> "CollaboratorRead":
         return cls(
             id=collaborator.id,
-            raffle_id=collaborator.raffle_id,
+            raffle_ids=raffle_ids,
             name=collaborator.name,
             phone=collaborator.phone,
             email=collaborator.email,

@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -10,6 +11,7 @@ from app.modules.public.dependencies import PublicUseCasesDep
 from app.modules.public.schemas import (
     PublicCollaboratorView,
     PublicRaffleView,
+    PublicReferralRaffleView,
     PublicReserveRequest,
     PublicReserveResult,
     PublicTicketView,
@@ -70,6 +72,17 @@ async def list_public_tickets(
     return PaginatedResponse(
         data=tickets, pagination=build_pagination_meta(page=page, page_size=page_size, total=total)
     )
+
+
+@router.get(
+    "/collaborators/{collaborator_id}/raffles",
+    response_model=SuccessResponse[list[PublicReferralRaffleView]],
+)
+async def list_referral_raffles(
+    collaborator_id: uuid.UUID, use_cases: PublicUseCasesDep
+) -> SuccessResponse[list[PublicReferralRaffleView]]:
+    raffles = await use_cases.get_referral_raffles(collaborator_id)
+    return SuccessResponse(message="Referral raffles retrieved.", data=raffles)
 
 
 @router.post(

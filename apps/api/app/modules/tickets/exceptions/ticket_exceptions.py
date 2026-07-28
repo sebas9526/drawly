@@ -66,3 +66,11 @@ class CollaboratorNotFoundForTicketError(NotFoundError):
 
     def __init__(self, message: str = "Collaborator not found for this raffle.") -> None:
         super().__init__(message)
+
+
+class TicketNotPaidError(ConflictError):
+    """Raised when confirming a winner for a ticket that isn't PAID — only a
+    paid ticket is eligible to win (docs/02-architecture/DOMAIN_MODEL.md)."""
+
+    def __init__(self, message: str = "Only a paid ticket can be marked as the winner.") -> None:
+        super().__init__(message)

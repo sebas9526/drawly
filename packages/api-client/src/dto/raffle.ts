@@ -4,7 +4,6 @@
  * Field names are snake_case on purpose — they mirror the JSON the API sends,
  * not internal TS naming conventions.
  */
-import type { ParticipantDto } from './participant';
 
 export type RaffleStatus = 'draft' | 'published' | 'closed' | 'archived';
 
@@ -28,6 +27,14 @@ export interface RaffleDto {
   publish_at: string | null;
   status: RaffleStatus;
   public_slug: string;
+  /** Set only once a *valid* (paid) winner closes the raffle — drives the
+   * cleanup sweep that removes a concluded raffle after a grace period. */
+  closed_at: string | null;
+  /** Reflects the last winner-registration attempt, valid or not. If
+   * `status` is 'closed', this ticket is the confirmed winner. If `status`
+   * is still 'published' and this is set, the last entered number wasn't
+   * paid — an unresolved attempt, not a hard block. */
+  winner_ticket_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,10 +61,18 @@ export interface ListRafflesQuery {
   sort?: string | undefined;
 }
 
-export interface SelectWinnerResult {
-  ticket: number;
-  participant: ParticipantDto;
-  winner_date: string;
+export interface RegisterWinnerRequest {
+  ticket_number: number;
+}
+
+/** Response for PATCH /raffles/{id}/winner. `valid: false` means the entered
+ * number wasn't paid — nothing closed, no winner confirmed, and the caller
+ * can just retry with another number. */
+export interface RegisterWinnerResult {
+  valid: boolean;
+  ticket_number: number;
+  participant_id: string | null;
+  winner_at: string | null;
 }
 
 /** Result of the explicit ticket-generation action (POST /raffles/{id}/tickets). */

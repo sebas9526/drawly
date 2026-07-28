@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,7 @@ from app.modules.collaborators.models import Collaborator
 from app.modules.collaborators.repositories import CollaboratorRepository
 from app.modules.collaborators.schemas import (
     CollaboratorCreate,
+    CollaboratorRead,
     CollaboratorStats,
     CollaboratorUpdate,
 )
@@ -19,15 +21,21 @@ from app.modules.collaborators.services import (
     CollaboratorService,
     CollaboratorTickets,
 )
+from app.modules.raffles.models import Raffle
 
 
 class CollaboratorUseCases:
     """Application layer for collaborators. Owns the transaction boundary and
     enforces ownership: every read/mutation is scoped to the authenticated owner,
-    and creating a collaborator requires that the target raffle belongs to them.
+    and creating/updating a collaborator requires that every target raffle
+    belongs to them.
 
-    Also exposes the public listing (active collaborators of a raffle) via an
-    unscoped instance — see the dependencies layer.
+    Read methods return fully-assembled ``CollaboratorRead`` (not the bare
+    entity) since a collaborator's raffle_ids live in a separate join table —
+    assembling them here (one batched lookup, no N+1) keeps that detail out of
+    the router. Also exposes the public listing (active collaborators of a
+    raffle, and a collaborator's published raffles for the referral link) via
+    an unscoped instance — see the dependencies layer.
     """
 
     def __init__(
@@ -46,15 +54,17 @@ class CollaboratorUseCases:
         self._service = service or CollaboratorService()
         self._owner_id = owner_id
 
-    async def create(self, data: CollaboratorCreate) -> Collaborator:
-        await self._require_owned_raffle(data.raffle_id)
+    async def create(self, data: CollaboratorCreate) -> CollaboratorRead:
+        await self._require_owned_raffles(data.raffle_ids)
         collaborator = self._service.build_collaborator(data, owner_id=self._owner_id)
         created = await self._repository.add(collaborator)
+        await self._repository.set_raffles(created.id, data.raffle_ids)
         await self._session.commit()
-        return created
+        return CollaboratorRead.from_entity(created, data.raffle_ids)
 
-    async def get(self, collaborator_id: uuid.UUID) -> Collaborator:
-        return await self._require(collaborator_id)
+    async def get(self, collaborator_id: uuid.UUID) -> CollaboratorRead:
+        collaborator = await self._require(collaborator_id)
+        return await self._to_read(collaborator)
 
     async def list_collaborators(
         self,
@@ -66,8 +76,8 @@ class CollaboratorUseCases:
         order: str,
         offset: int,
         limit: int,
-    ) -> tuple[list[Collaborator], int]:
-        return await self._repository.list_paginated(
+    ) -> tuple[list[CollaboratorRead], int]:
+        collaborators, total = await self._repository.list_paginated(
             search=search,
             raffle_id=raffle_id,
             is_active=is_active,
@@ -77,27 +87,34 @@ class CollaboratorUseCases:
             limit=limit,
             owner_id=self._owner_id,
         )
+        return await self._to_read_many(collaborators), total
 
     async def list_by_raffle(
         self, raffle_id: uuid.UUID, *, active_only: bool = False
-    ) -> list[Collaborator]:
-        return await self._repository.list_by_raffle(
+    ) -> list[CollaboratorRead]:
+        collaborators = await self._repository.list_by_raffle(
             raffle_id, owner_id=self._owner_id, active_only=active_only
         )
+        return await self._to_read_many(collaborators)
 
-    async def update(self, collaborator_id: uuid.UUID, data: CollaboratorUpdate) -> Collaborator:
+    async def update(
+        self, collaborator_id: uuid.UUID, data: CollaboratorUpdate
+    ) -> CollaboratorRead:
         collaborator = await self._require(collaborator_id)
         self._service.apply_update(collaborator, data)
         saved = await self._repository.save(collaborator)
+        if data.raffle_ids is not None:
+            await self._require_owned_raffles(data.raffle_ids)
+            await self._repository.set_raffles(collaborator_id, data.raffle_ids)
         await self._session.commit()
-        return saved
+        return await self._to_read(saved)
 
-    async def set_active(self, collaborator_id: uuid.UUID, *, is_active: bool) -> Collaborator:
+    async def set_active(self, collaborator_id: uuid.UUID, *, is_active: bool) -> CollaboratorRead:
         collaborator = await self._require(collaborator_id)
         collaborator.is_active = is_active
         saved = await self._repository.save(collaborator)
         await self._session.commit()
-        return saved
+        return await self._to_read(saved)
 
     async def delete(self, collaborator_id: uuid.UUID) -> None:
         collaborator = await self._require(collaborator_id)
@@ -125,6 +142,22 @@ class CollaboratorUseCases:
             )
         return stats
 
+    async def list_published_raffles(self, collaborator_id: uuid.UUID) -> list[Raffle] | None:
+        """PublicCollaborators port: a collaborator's published raffles, for
+        the personal referral link. None if the collaborator doesn't exist,
+        is inactive, or is deleted."""
+        return await self._repository.list_published_raffles_for_collaborator(collaborator_id)
+
+    async def _to_read(self, collaborator: Collaborator) -> CollaboratorRead:
+        raffle_ids = await self._repository.list_raffle_ids_by_collaborators([collaborator.id])
+        return CollaboratorRead.from_entity(collaborator, raffle_ids.get(collaborator.id, []))
+
+    async def _to_read_many(self, collaborators: Sequence[Collaborator]) -> list[CollaboratorRead]:
+        raffle_ids = await self._repository.list_raffle_ids_by_collaborators(
+            [c.id for c in collaborators]
+        )
+        return [CollaboratorRead.from_entity(c, raffle_ids.get(c.id, [])) for c in collaborators]
+
     async def _require(self, collaborator_id: uuid.UUID) -> Collaborator:
         collaborator = await self._repository.get(collaborator_id, owner_id=self._owner_id)
         if collaborator is None:
@@ -140,3 +173,7 @@ class CollaboratorUseCases:
         if price is None:
             raise RaffleNotFoundForCollaboratorError()
         return price
+
+    async def _require_owned_raffles(self, raffle_ids: Sequence[uuid.UUID]) -> None:
+        for raffle_id in raffle_ids:
+            await self._require_owned_raffle(raffle_id)

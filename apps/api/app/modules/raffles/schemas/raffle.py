@@ -57,6 +57,8 @@ class RaffleRead(BaseModel):
     publish_at: datetime | None
     status: RaffleStatus
     public_slug: str
+    closed_at: datetime | None
+    winner_ticket_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 
@@ -76,6 +78,8 @@ class RaffleRead(BaseModel):
             publish_at=raffle.publish_at,
             status=raffle.status,
             public_slug=raffle.public_slug,
+            closed_at=raffle.closed_at,
+            winner_ticket_id=raffle.winner_ticket_id,
             created_at=raffle.created_at,
             updated_at=raffle.updated_at,
         )
@@ -86,3 +90,23 @@ class GenerateTicketsResult(BaseModel):
 
     raffle_id: uuid.UUID
     generated: int
+
+
+class RegisterWinnerRequest(BaseModel):
+    """Request body for PATCH /raffles/{id}/winner — manual winner entry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # ge=0: a raffle may start numbering at 0 (RaffleCreate.starting_number).
+    ticket_number: int = Field(ge=0)
+
+
+class RegisterWinnerResult(BaseModel):
+    """Response for PATCH /raffles/{id}/winner. ``valid=False`` means the
+    entered number wasn't paid — nothing closed, no winner confirmed, and the
+    organizer can just try another number."""
+
+    valid: bool
+    ticket_number: int
+    participant_id: uuid.UUID | None
+    winner_at: datetime | None

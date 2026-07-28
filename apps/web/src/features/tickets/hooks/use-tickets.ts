@@ -24,20 +24,29 @@ export function useTickets(raffleId: string, status?: TicketStatus) {
 export interface RaffleTicketCounts {
   reserved: number;
   paid: number;
+  /** Tickets actually generated in the DB so far — distinct from the
+   * raffle's configured `total_tickets`, which stays the same whether or
+   * not "Generar boletas" has been run yet. */
+  generated: number;
 }
 
-/** Reserved/paid ticket counts for a raffle, read from pagination totals
- * (page_size: 1) so raffle cards can show sales progress without fetching
- * every ticket row. */
+/** Reserved/paid/generated ticket counts for a raffle, read from pagination
+ * totals (page_size: 1) so raffle cards can show sales progress (and whether
+ * tickets exist at all) without fetching every ticket row. */
 export function useRaffleTicketCounts(raffleId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.raffleTicketCounts(raffleId),
     queryFn: async (): Promise<RaffleTicketCounts> => {
-      const [reserved, paid] = await Promise.all([
+      const [reserved, paid, generated] = await Promise.all([
         api.tickets.list({ raffle_id: raffleId, status: 'reserved', page_size: 1 }),
         api.tickets.list({ raffle_id: raffleId, status: 'paid', page_size: 1 }),
+        api.tickets.list({ raffle_id: raffleId, page_size: 1 }),
       ]);
-      return { reserved: reserved.pagination.total, paid: paid.pagination.total };
+      return {
+        reserved: reserved.pagination.total,
+        paid: paid.pagination.total,
+        generated: generated.pagination.total,
+      };
     },
     enabled: raffleId.length > 0,
   });

@@ -17,4 +17,5 @@ export const ROUTES = {
   REPORTS_COLLABORATORS: '/reports/collaborators',
   REPORTS_PARTICIPANTS: '/reports/participants',
   PUBLIC_RAFFLE: (slug: string) => `/r/${slug}`,
+  REFERRAL: (collaboratorId: string) => `/ref/${collaboratorId}`,
 } as const;

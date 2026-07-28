@@ -16,7 +16,7 @@ export const COLLABORATOR_COLORS = [
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 export const collaboratorFormSchema = z.object({
-  raffle_id: z.string().min(1, 'Selecciona una rifa'),
+  raffle_ids: z.array(z.string()).min(1, 'Selecciona al menos una rifa'),
   name: z.string().min(1, 'El nombre es obligatorio').max(150),
   phone: phoneSchema.optional().or(z.literal('')),
   email: emailSchema.max(150).optional().or(z.literal('')),
@@ -26,7 +26,7 @@ export const collaboratorFormSchema = z.object({
 });
 
 export interface CollaboratorFormValues {
-  raffle_id: string;
+  raffle_ids: string[];
   name: string;
   phone: string;
   email: string;

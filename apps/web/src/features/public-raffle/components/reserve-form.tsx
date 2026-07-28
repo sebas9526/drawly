@@ -7,6 +7,7 @@ import { Field } from '@drawly/ui/Field';
 import { Input } from '@drawly/ui/Input';
 import { Select } from '@drawly/ui/Select';
 import { formatTicketNumber } from '@drawly/utils';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -44,12 +45,20 @@ export function ReserveForm({
   const { register, handleSubmit } = useForm<ReserveFormValues>({
     defaultValues: { ...EMPTY_RESERVE_FORM, collaborator_id: lockedCollaborator?.id ?? '' },
   });
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const noCollaboratorsAvailable = !lockedCollaborator && collaborators.length === 0;
 
   const submit = handleSubmit((values) => {
     const finalValues = lockedCollaborator
       ? { ...values, collaborator_id: lockedCollaborator.id }
       : values;
-    if (!reserveFormSchema.safeParse(finalValues).success) return;
+    const result = reserveFormSchema.safeParse(finalValues);
+    if (!result.success) {
+      setValidationError(result.error.issues[0]?.message ?? 'Revisa los datos del formulario.');
+      return;
+    }
+    setValidationError(null);
     onSubmit(finalValues);
   });
 
@@ -86,25 +95,35 @@ export function ReserveForm({
             <span className="text-text-primary font-medium">{lockedCollaborator.name}</span>
           </div>
         </Field>
+      ) : noCollaboratorsAvailable ? (
+        <Alert tone="info">
+          Esta rifa aún no tiene vendedores configurados. Contacta al organizador para reservar una
+          boleta.
+        </Alert>
       ) : (
-        collaborators.length > 0 && (
-          <Field label="Vendido por (opcional)">
-            <Select {...register('collaborator_id')}>
-              <option value="">Sin colaborador</option>
-              {collaborators.map((collaborator) => (
-                <option key={collaborator.id} value={collaborator.id}>
-                  {collaborator.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )
+        <Field label="Vendido por">
+          <Select {...register('collaborator_id')}>
+            <option value="">Selecciona un vendedor</option>
+            {collaborators.map((collaborator) => (
+              <option key={collaborator.id} value={collaborator.id}>
+                {collaborator.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
       )}
 
-      {errorMessage && <Alert tone="danger">{errorMessage}</Alert>}
+      {(validationError ?? errorMessage) && (
+        <Alert tone="danger">{validationError ?? errorMessage}</Alert>
+      )}
 
       <div className="flex gap-2">
-        <Button type="submit" className="flex-1" loading={pending}>
+        <Button
+          type="submit"
+          className="flex-1"
+          loading={pending}
+          disabled={noCollaboratorsAvailable}
+        >
           Confirmar reserva
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>

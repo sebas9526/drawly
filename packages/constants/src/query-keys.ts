@@ -35,6 +35,8 @@ export const QUERY_KEYS = {
   publicCollaborators: (slug: string) => ['public', 'raffle', slug, 'collaborators'] as const,
   publicRaffle: (slug: string) => ['public', 'raffle', slug] as const,
   publicTickets: (slug: string) => ['public', 'raffle', slug, 'tickets'] as const,
+  publicReferralRaffles: (collaboratorId: string) =>
+    ['public', 'collaborator', collaboratorId, 'raffles'] as const,
   dashboardOverview: ['dashboard', 'overview'] as const,
   analyticsDashboard: (filters?: Record<string, unknown>) =>
     ['analytics', 'dashboard', filters ?? {}] as const,

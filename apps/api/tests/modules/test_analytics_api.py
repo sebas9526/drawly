@@ -43,7 +43,7 @@ async def _create_participant(client: AsyncClient, *, full_name: str, phone: str
 
 async def _create_collaborator(client: AsyncClient, *, raffle_id: str, name: str) -> str:
     response = await client.post(
-        f"{API}/collaborators", json={"raffle_id": raffle_id, "name": name}
+        f"{API}/collaborators", json={"raffle_ids": [raffle_id], "name": name}
     )
     assert response.status_code == 201, response.text
     collaborator_id: str = response.json()["data"]["id"]

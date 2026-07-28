@@ -26,6 +26,17 @@ export function usePublicCollaborators(slug: string) {
   });
 }
 
+/** A collaborator's personal referral link (/ref/{id}) resolves to this —
+ * their currently-published raffles. */
+export function usePublicReferralRaffles(collaboratorId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.publicReferralRaffles(collaboratorId),
+    queryFn: () => api.public.getReferralRaffles(collaboratorId),
+    enabled: collaboratorId.length > 0,
+    retry: false,
+  });
+}
+
 export function usePublicTickets(slug: string) {
   return useQuery({
     queryKey: QUERY_KEYS.publicTickets(slug),

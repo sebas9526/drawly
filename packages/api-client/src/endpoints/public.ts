@@ -5,6 +5,7 @@ import type {
   ListPublicTicketsQuery,
   PublicCollaboratorView,
   PublicRaffleView,
+  PublicReferralRaffleView,
   PublicReserveRequest,
   PublicReserveResult,
   PublicTicketView,
@@ -37,6 +38,14 @@ export function createPublicEndpoints(client: ApiClient) {
       client.get<PublicCollaboratorView[]>(`${BASE_PATH}/raffles/${slug}/collaborators`, {
         skipAuth: true,
       }),
+
+    /** A collaborator's currently-published raffles — resolves their
+     * personal referral link (/ref/{collaboratorId}). */
+    getReferralRaffles: (collaboratorId: string): Promise<PublicReferralRaffleView[]> =>
+      client.get<PublicReferralRaffleView[]>(
+        `${BASE_PATH}/collaborators/${collaboratorId}/raffles`,
+        { skipAuth: true },
+      ),
 
     reserveTicket: (slug: string, payload: PublicReserveRequest): Promise<PublicReserveResult> =>
       client.post<PublicReserveResult>(`${BASE_PATH}/raffles/${slug}/reserve`, payload, {

@@ -17,6 +17,11 @@ export interface PublicRaffleView {
   available_count: number;
   reserved_count: number;
   paid_count: number;
+  /** Set only once the raffle is closed with a confirmed (paid) winner —
+   * never for an unresolved attempt. No phone/document, just enough for a
+   * public announcement. */
+  winner_ticket_number: number | null;
+  winner_participant_name: string | null;
 }
 
 export interface PublicTicketView {
@@ -36,6 +41,15 @@ export interface PublicCollaboratorView {
   color: string;
 }
 
+/** One of a collaborator's published raffles, shown on their personal
+ * referral link (/ref/{collaboratorId}) when they sell for more than one. */
+export interface PublicReferralRaffleView {
+  public_slug: string;
+  title: string;
+  prize: string;
+  cover_image: string | null;
+}
+
 export interface PublicReserveRequest {
   ticket_number: number;
   participant: {
@@ -44,8 +58,8 @@ export interface PublicReserveRequest {
     email?: string | undefined;
     document?: string | undefined;
   };
-  /** Optional seller credited with the reservation. */
-  collaborator_id?: string | null | undefined;
+  /** Seller credited with the reservation — required (public flow only). */
+  collaborator_id: string;
 }
 
 export interface PublicReserveResult {

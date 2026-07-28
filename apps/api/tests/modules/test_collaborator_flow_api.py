@@ -33,9 +33,15 @@ async def _create_raffle(client: AsyncClient, *, total: int = 5, title: str = "R
 async def _create_collaborator(
     client: AsyncClient, raffle_id: str, *, name: str = "Juan", is_active: bool = True
 ) -> dict[str, Any]:
+    return await _create_collaborator_for(client, [raffle_id], name=name, is_active=is_active)
+
+
+async def _create_collaborator_for(
+    client: AsyncClient, raffle_ids: list[str], *, name: str = "Juan", is_active: bool = True
+) -> dict[str, Any]:
     response = await client.post(
         f"{API}/collaborators",
-        json={"raffle_id": raffle_id, "name": name, "color": "#4F46E5", "is_active": is_active},
+        json={"raffle_ids": raffle_ids, "name": name, "color": "#4F46E5", "is_active": is_active},
     )
     assert response.status_code == 201, response.text
     data: dict[str, Any] = response.json()["data"]
@@ -87,7 +93,7 @@ async def test_create_collaborator_requires_owned_raffle(
     # Bob cannot create a collaborator on Alice's raffle.
     response = await bob.post(
         f"{API}/collaborators",
-        json={"raffle_id": alice_raffle, "name": "Intruso", "color": "#4F46E5"},
+        json={"raffle_ids": [alice_raffle], "name": "Intruso", "color": "#4F46E5"},
     )
     assert response.status_code == 404
 
@@ -181,3 +187,45 @@ async def test_public_reserve_with_collaborator(api_client: AsyncClient) -> None
         },
     )
     assert reserve.status_code == 201, reserve.text
+
+
+async def test_same_collaborator_can_sell_for_two_raffles(api_client: AsyncClient) -> None:
+    raffle_a = await _create_raffle(api_client, total=2, title="Rifa A")
+    raffle_b = await _create_raffle(api_client, total=2, title="Rifa B")
+    collaborator = await _create_collaborator_for(api_client, [raffle_a, raffle_b], name="Ana")
+    assert sorted(collaborator["raffle_ids"]) == sorted([raffle_a, raffle_b])
+
+    by_a = await api_client.get(f"{API}/collaborators/raffle/{raffle_a}")
+    by_b = await api_client.get(f"{API}/collaborators/raffle/{raffle_b}")
+    assert [c["id"] for c in by_a.json()["data"]] == [collaborator["id"]]
+    assert [c["id"] for c in by_b.json()["data"]] == [collaborator["id"]]
+
+    # Reservations in either raffle can credit the same collaborator.
+    for raffle_id in (raffle_a, raffle_b):
+        await api_client.post(f"{API}/raffles/{raffle_id}/tickets")
+        await api_client.patch(f"{API}/raffles/{raffle_id}/publish")
+        tickets = (await api_client.get(f"{API}/tickets", params={"raffle_id": raffle_id})).json()[
+            "data"
+        ]
+        reserved = await api_client.patch(
+            f"{API}/tickets/{tickets[0]['id']}/reserve",
+            json={"collaborator_id": collaborator["id"]},
+        )
+        assert reserved.status_code == 200, reserved.text
+
+
+async def test_editing_raffle_ids_replaces_the_whole_set(api_client: AsyncClient) -> None:
+    raffle_a = await _create_raffle(api_client, total=2, title="Rifa A")
+    raffle_b = await _create_raffle(api_client, total=2, title="Rifa B")
+    collaborator = await _create_collaborator_for(api_client, [raffle_a], name="Ana")
+
+    updated = await api_client.put(
+        f"{API}/collaborators/{collaborator['id']}", json={"raffle_ids": [raffle_b]}
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["data"]["raffle_ids"] == [raffle_b]
+
+    by_a = await api_client.get(f"{API}/collaborators/raffle/{raffle_a}")
+    by_b = await api_client.get(f"{API}/collaborators/raffle/{raffle_b}")
+    assert by_a.json()["data"] == []
+    assert [c["id"] for c in by_b.json()["data"]] == [collaborator["id"]]

@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     raffle_publish_sweep_enabled: bool = True
     raffle_publish_sweep_interval_seconds: int = 60
 
+    # In-process sweep that soft-deletes a CLOSED raffle (and its tickets) once
+    # it's been closed for raffle_cleanup_grace_hours (see app/modules/raffles.
+    # dependencies.sweep_closed_raffles). Runs infrequently since the grace
+    # period is measured in hours, not seconds.
+    raffle_cleanup_sweep_enabled: bool = True
+    raffle_cleanup_sweep_interval_seconds: int = 60 * 60 * 12  # 12 hours
+    raffle_cleanup_grace_hours: int = 24
+
     # --- Rate limiting (in-memory, single-process fixed window; see app/core/rate_limit.py) ---
     rate_limit_enabled: bool = True
     rate_limit_auth_max_requests: int = 5

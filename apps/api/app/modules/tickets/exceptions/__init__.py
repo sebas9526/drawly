@@ -6,6 +6,7 @@ from .ticket_exceptions import (
     TicketImmutableError,
     TicketNotAvailableError,
     TicketNotFoundError,
+    TicketNotPaidError,
     TicketNotReservedError,
     TicketsAlreadyGeneratedError,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "TicketImmutableError",
     "TicketNotAvailableError",
     "TicketNotFoundError",
+    "TicketNotPaidError",
     "TicketNotReservedError",
     "TicketsAlreadyGeneratedError",
 ]

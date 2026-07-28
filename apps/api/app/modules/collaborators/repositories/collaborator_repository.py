@@ -1,11 +1,13 @@
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
 from app.database.base import utcnow
-from app.modules.collaborators.models import Collaborator
+from app.modules.collaborators.models import Collaborator, CollaboratorRaffle
+from app.modules.raffles.models import Raffle, RaffleStatus
 
 # Whitelisted sort columns (avoids arbitrary/injected ORDER BY).
 _SORT_COLUMNS = {
@@ -55,7 +57,12 @@ class CollaboratorRepository:
         if owner_id is not None:
             base = base.where(Collaborator.owner_id == owner_id)
         if raffle_id is not None:
-            base = base.where(Collaborator.raffle_id == raffle_id)
+            base = base.join(
+                CollaboratorRaffle, col(CollaboratorRaffle.collaborator_id) == Collaborator.id
+            ).where(
+                CollaboratorRaffle.raffle_id == raffle_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+            )
         if is_active is not None:
             base = base.where(Collaborator.is_active == is_active)
         if search:
@@ -82,8 +89,14 @@ class CollaboratorRepository:
         owner_id: uuid.UUID | None = None,
         active_only: bool = False,
     ) -> list[Collaborator]:
-        statement = select(Collaborator).where(
-            Collaborator.raffle_id == raffle_id, col(Collaborator.deleted_at).is_(None)
+        statement = (
+            select(Collaborator)
+            .join(CollaboratorRaffle, col(CollaboratorRaffle.collaborator_id) == Collaborator.id)
+            .where(
+                CollaboratorRaffle.raffle_id == raffle_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+                col(Collaborator.deleted_at).is_(None),
+            )
         )
         if owner_id is not None:
             statement = statement.where(Collaborator.owner_id == owner_id)
@@ -101,12 +114,17 @@ class CollaboratorRepository:
         owner_id: uuid.UUID | None = None,
         active_only: bool = False,
     ) -> bool:
-        """True if the collaborator exists, is not deleted, and belongs to the
-        given raffle (and owner / active state when required)."""
-        statement = select(Collaborator.id).where(
-            Collaborator.id == collaborator_id,
-            Collaborator.raffle_id == raffle_id,
-            col(Collaborator.deleted_at).is_(None),
+        """True if the collaborator exists, is not deleted, and is linked to
+        the given raffle (and owner / active state when required)."""
+        statement = (
+            select(Collaborator.id)
+            .join(CollaboratorRaffle, col(CollaboratorRaffle.collaborator_id) == Collaborator.id)
+            .where(
+                Collaborator.id == collaborator_id,
+                CollaboratorRaffle.raffle_id == raffle_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+                col(Collaborator.deleted_at).is_(None),
+            )
         )
         if owner_id is not None:
             statement = statement.where(Collaborator.owner_id == owner_id)
@@ -114,6 +132,78 @@ class CollaboratorRepository:
             statement = statement.where(col(Collaborator.is_active).is_(True))
         result = await self._session.execute(statement)
         return result.scalars().first() is not None
+
+    async def list_raffle_ids_by_collaborators(
+        self, collaborator_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[uuid.UUID]]:
+        """Batch lookup — avoids an N+1 when assembling a list of collaborators
+        into CollaboratorRead (each needs its own raffle_ids)."""
+        ids = list(collaborator_ids)
+        if not ids:
+            return {}
+        statement = select(CollaboratorRaffle.collaborator_id, CollaboratorRaffle.raffle_id).where(
+            col(CollaboratorRaffle.collaborator_id).in_(ids),
+            col(CollaboratorRaffle.deleted_at).is_(None),
+        )
+        result = await self._session.execute(statement)
+        out: dict[uuid.UUID, list[uuid.UUID]] = {cid: [] for cid in ids}
+        for collaborator_id, raffle_id in result.all():
+            out[collaborator_id].append(raffle_id)
+        return out
+
+    async def set_raffles(
+        self, collaborator_id: uuid.UUID, raffle_ids: Sequence[uuid.UUID]
+    ) -> None:
+        """Replaces the collaborator's full set of raffle links: soft-deletes
+        every current (non-deleted) link, then inserts a fresh row per id in
+        ``raffle_ids``. Used by both create and update — always the whole
+        set, never an incremental add/remove, so callers don't need to diff."""
+        now = utcnow()
+        existing = await self._session.execute(
+            select(CollaboratorRaffle).where(
+                CollaboratorRaffle.collaborator_id == collaborator_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+            )
+        )
+        for link in existing.scalars().all():
+            link.deleted_at = now
+            link.updated_at = now
+            self._session.add(link)
+        for raffle_id in raffle_ids:
+            self._session.add(
+                CollaboratorRaffle(collaborator_id=collaborator_id, raffle_id=raffle_id)
+            )
+        await self._session.flush()
+
+    async def list_published_raffles_for_collaborator(
+        self, collaborator_id: uuid.UUID
+    ) -> list[Raffle] | None:
+        """None if the collaborator doesn't exist, is inactive, or is
+        deleted — distinct from an empty list (exists, active, but currently
+        linked to zero published raffles). Used by the public referral link."""
+        collaborator = await self._session.execute(
+            select(Collaborator.id).where(
+                Collaborator.id == collaborator_id,
+                col(Collaborator.deleted_at).is_(None),
+                col(Collaborator.is_active).is_(True),
+            )
+        )
+        if collaborator.scalars().first() is None:
+            return None
+
+        statement = (
+            select(Raffle)
+            .join(CollaboratorRaffle, col(CollaboratorRaffle.raffle_id) == Raffle.id)
+            .where(
+                CollaboratorRaffle.collaborator_id == collaborator_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+                Raffle.status == RaffleStatus.PUBLISHED,
+                col(Raffle.deleted_at).is_(None),
+            )
+            .order_by(col(Raffle.title).asc())
+        )
+        result = await self._session.execute(statement)
+        return list(result.scalars().all())
 
     async def save(self, collaborator: Collaborator) -> Collaborator:
         collaborator.updated_at = utcnow()

@@ -3,9 +3,9 @@
 import { getApiErrorMessage, type CollaboratorDto } from '@drawly/api-client';
 import { Alert } from '@drawly/ui/Alert';
 import { Button } from '@drawly/ui/Button';
+import { Checkbox } from '@drawly/ui/Checkbox';
 import { Field } from '@drawly/ui/Field';
 import { Input } from '@drawly/ui/Input';
-import { Select } from '@drawly/ui/Select';
 import { Switch } from '@drawly/ui/Switch';
 import { Textarea } from '@drawly/ui/Textarea';
 import { Check } from 'lucide-react';
@@ -32,7 +32,7 @@ function toDefaults(
   defaultRaffleId: string,
 ): CollaboratorFormValues {
   return {
-    raffle_id: collaborator?.raffle_id ?? defaultRaffleId,
+    raffle_ids: collaborator?.raffle_ids ?? (defaultRaffleId ? [defaultRaffleId] : []),
     name: collaborator?.name ?? '',
     phone: collaborator?.phone ?? '',
     email: collaborator?.email ?? '',
@@ -68,13 +68,14 @@ export function CollaboratorForm({
   const onSubmit = handleSubmit((values) => {
     const parsed = collaboratorFormSchema.safeParse(values);
     if (!parsed.success) return;
-    const { raffle_id, name, phone, email, color, notes, is_active } = parsed.data;
+    const { raffle_ids, name, phone, email, color, notes, is_active } = parsed.data;
 
     if (isEditing) {
       update.mutate(
         {
           id: collaborator.id,
           payload: {
+            raffle_ids,
             name,
             phone: phone || undefined,
             email: email || undefined,
@@ -90,7 +91,7 @@ export function CollaboratorForm({
 
     create.mutate(
       {
-        raffle_id,
+        raffle_ids,
         name,
         phone: phone || undefined,
         email: email || undefined,
@@ -104,15 +105,29 @@ export function CollaboratorForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-      <Field label="Rifa" htmlFor="raffle_id" error={errors.raffle_id?.message}>
-        <Select id="raffle_id" disabled={isEditing} {...register('raffle_id')}>
-          <option value="">Selecciona una rifa</option>
-          {(raffles ?? []).map((raffle) => (
-            <option key={raffle.id} value={raffle.id}>
-              {raffle.title}
-            </option>
-          ))}
-        </Select>
+      <Field label="Rifas" error={errors.raffle_ids?.message}>
+        <Controller
+          control={control}
+          name="raffle_ids"
+          render={({ field }) => (
+            <div className="border-border flex max-h-40 flex-col gap-2 overflow-y-auto rounded-lg border p-3">
+              {(raffles ?? []).map((raffle) => (
+                <Checkbox
+                  key={raffle.id}
+                  label={raffle.title}
+                  checked={field.value.includes(raffle.id)}
+                  onChange={(event) => {
+                    field.onChange(
+                      event.target.checked
+                        ? [...field.value, raffle.id]
+                        : field.value.filter((id) => id !== raffle.id),
+                    );
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        />
       </Field>
 
       <Field label="Nombre" htmlFor="name" error={errors.name?.message}>

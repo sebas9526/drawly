@@ -5,7 +5,8 @@
  */
 export interface CollaboratorDto {
   id: string;
-  raffle_id: string;
+  /** Every raffle this collaborator currently sells for (many-to-many). */
+  raffle_ids: string[];
   name: string;
   phone: string | null;
   email: string | null;
@@ -17,7 +18,7 @@ export interface CollaboratorDto {
 }
 
 export interface CreateCollaboratorRequest {
-  raffle_id: string;
+  raffle_ids: string[];
   name: string;
   phone?: string | undefined;
   email?: string | undefined;
@@ -26,7 +27,10 @@ export interface CreateCollaboratorRequest {
   is_active?: boolean | undefined;
 }
 
-export type UpdateCollaboratorRequest = Partial<Omit<CreateCollaboratorRequest, 'raffle_id'>>;
+export type UpdateCollaboratorRequest = Partial<Omit<CreateCollaboratorRequest, 'raffle_ids'>> & {
+  /** Omit to leave raffle links untouched; pass to replace the whole set. */
+  raffle_ids?: string[] | undefined;
+};
 
 export type CollaboratorSort = 'created_at' | 'name' | 'is_active';
 export type SortOrder = 'asc' | 'desc';

@@ -11,7 +11,6 @@ class CollaboratorService:
     def build_collaborator(data: CollaboratorCreate, *, owner_id: uuid.UUID | None) -> Collaborator:
         return Collaborator(
             owner_id=owner_id,
-            raffle_id=data.raffle_id,
             name=data.name.strip(),
             phone=data.phone,
             email=data.email,

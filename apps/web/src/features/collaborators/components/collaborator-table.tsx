@@ -1,14 +1,16 @@
 'use client';
 
 import { getApiErrorMessage, type CollaboratorDto } from '@drawly/api-client';
+import { ActionMenu } from '@drawly/ui/ActionMenu';
 import { Alert } from '@drawly/ui/Alert';
+import { Badge } from '@drawly/ui/Badge';
 import { Card } from '@drawly/ui/Card';
 import { ConfirmDialog } from '@drawly/ui/ConfirmDialog';
 import { DataTable, type Column } from '@drawly/ui/DataTable';
 import { IconButton } from '@drawly/ui/IconButton';
 import { Switch } from '@drawly/ui/Switch';
 import { Tooltip } from '@drawly/ui/Tooltip';
-import { Check, Link2, Pencil, Trash2 } from 'lucide-react';
+import { Check, Copy, Link2, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface CollaboratorTableProps {
@@ -19,9 +21,12 @@ interface CollaboratorTableProps {
   onEdit: (collaborator: CollaboratorDto) => void;
   onToggleActive: (collaborator: CollaboratorDto) => void;
   onDelete: (id: string) => void;
-  /** Copies the collaborator's referral link to the clipboard; returns false
-   * when the raffle has no public slug yet (e.g. still a draft). */
-  onCopyLink: (collaborator: CollaboratorDto) => Promise<boolean>;
+  /** Copies the collaborator's personal referral link (/ref/{id}) — always
+   * works, doesn't depend on any specific raffle. */
+  onCopyPersonalLink: (collaborator: CollaboratorDto) => Promise<void>;
+  /** Copies the link for one specific raffle (/r/{slug}?ref=) — returns
+   * false when that raffle has no public slug yet (e.g. still a draft). */
+  onCopyRaffleLink: (collaborator: CollaboratorDto, raffleId: string) => Promise<boolean>;
 }
 
 export function CollaboratorTable({
@@ -32,19 +37,28 @@ export function CollaboratorTable({
   onEdit,
   onToggleActive,
   onDelete,
-  onCopyLink,
+  onCopyPersonalLink,
+  onCopyRaffleLink,
 }: CollaboratorTableProps): React.JSX.Element {
   const [confirming, setConfirming] = useState<CollaboratorDto | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopy = async (collaborator: CollaboratorDto): Promise<void> => {
-    const copied = await onCopyLink(collaborator);
-    if (!copied) return;
-    setCopiedId(collaborator.id);
-    setTimeout(
-      () => setCopiedId((current) => (current === collaborator.id ? null : current)),
-      1500,
-    );
+  const flashCopied = (collaboratorId: string): void => {
+    setCopiedId(collaboratorId);
+    setTimeout(() => setCopiedId((current) => (current === collaboratorId ? null : current)), 1500);
+  };
+
+  const handleCopyPersonal = async (collaborator: CollaboratorDto): Promise<void> => {
+    await onCopyPersonalLink(collaborator);
+    flashCopied(collaborator.id);
+  };
+
+  const handleCopyRaffle = async (
+    collaborator: CollaboratorDto,
+    raffleId: string,
+  ): Promise<void> => {
+    const copied = await onCopyRaffleLink(collaborator, raffleId);
+    if (copied) flashCopied(collaborator.id);
   };
 
   const columns: Column<CollaboratorDto>[] = [
@@ -64,7 +78,19 @@ export function CollaboratorTable({
         </span>
       ),
     },
-    { key: 'raffle', header: 'Rifa', render: (c) => raffleNameById(c.raffle_id) },
+    {
+      key: 'raffle',
+      header: 'Rifas',
+      render: (c) => (
+        <div className="flex flex-wrap gap-1">
+          {c.raffle_ids.map((raffleId) => (
+            <Badge key={raffleId} tone="neutral">
+              {raffleNameById(raffleId)}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
     { key: 'phone', header: 'Teléfono', render: (c) => c.phone ?? '—' },
     { key: 'email', header: 'Correo', render: (c) => c.email ?? '—' },
     {
@@ -85,12 +111,12 @@ export function CollaboratorTable({
       header: '',
       render: (c) => (
         <div className="flex justify-end gap-1">
-          <Tooltip label={copiedId === c.id ? 'Copiado' : 'Copiar link de referido'}>
+          <Tooltip label={copiedId === c.id ? 'Copiado' : 'Copiar link personal'}>
             <IconButton
               size="sm"
               variant="ghost"
-              aria-label="Copiar link de referido"
-              onClick={() => void handleCopy(c)}
+              aria-label="Copiar link personal"
+              onClick={() => void handleCopyPersonal(c)}
             >
               {copiedId === c.id ? (
                 <Check size={16} className="text-success" />
@@ -99,6 +125,16 @@ export function CollaboratorTable({
               )}
             </IconButton>
           </Tooltip>
+          {c.raffle_ids.length > 0 && (
+            <ActionMenu
+              ariaLabel={`Copiar link de una rifa específica para ${c.name}`}
+              items={c.raffle_ids.map((raffleId) => ({
+                label: `Copiar link: ${raffleNameById(raffleId)}`,
+                icon: <Copy size={14} />,
+                onSelect: () => void handleCopyRaffle(c, raffleId),
+              }))}
+            />
+          )}
           <IconButton size="sm" variant="ghost" aria-label="Editar" onClick={() => onEdit(c)}>
             <Pencil size={16} />
           </IconButton>

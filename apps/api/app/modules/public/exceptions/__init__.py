@@ -1,3 +1,3 @@
-from .public_exceptions import PublicTicketNotFoundError
+from .public_exceptions import PublicCollaboratorNotFoundError, PublicTicketNotFoundError
 
-__all__ = ["PublicTicketNotFoundError"]
+__all__ = ["PublicCollaboratorNotFoundError", "PublicTicketNotFoundError"]

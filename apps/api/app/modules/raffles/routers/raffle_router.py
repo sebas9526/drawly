@@ -11,6 +11,8 @@ from app.modules.raffles.schemas import (
     RaffleCreate,
     RaffleRead,
     RaffleUpdate,
+    RegisterWinnerRequest,
+    RegisterWinnerResult,
 )
 
 router = APIRouter()
@@ -90,3 +92,24 @@ async def publish_raffle(
 ) -> SuccessResponse[RaffleRead]:
     raffle = await use_cases.publish(raffle_id)
     return SuccessResponse(message="Raffle published.", data=RaffleRead.from_entity(raffle))
+
+
+@router.patch("/{raffle_id}/winner", response_model=SuccessResponse[RegisterWinnerResult])
+async def register_winner(
+    raffle_id: uuid.UUID, payload: RegisterWinnerRequest, use_cases: RaffleUseCasesDep
+) -> SuccessResponse[RegisterWinnerResult]:
+    result = await use_cases.register_winner(raffle_id, payload.ticket_number)
+    message = (
+        "Winner registered; raffle closed."
+        if result.valid
+        else "That ticket hasn't been paid — no winner registered."
+    )
+    return SuccessResponse(
+        message=message,
+        data=RegisterWinnerResult(
+            valid=result.valid,
+            ticket_number=payload.ticket_number,
+            participant_id=result.participant_id,
+            winner_at=result.winner_at,
+        ),
+    )

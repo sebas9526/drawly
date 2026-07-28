@@ -23,10 +23,7 @@ async def create_collaborator(
     payload: CollaboratorCreate, use_cases: CollaboratorUseCasesDep
 ) -> SuccessResponse[CollaboratorRead]:
     collaborator = await use_cases.create(payload)
-    return SuccessResponse(
-        message="Collaborator created successfully.",
-        data=CollaboratorRead.from_entity(collaborator),
-    )
+    return SuccessResponse(message="Collaborator created successfully.", data=collaborator)
 
 
 @router.get("", response_model=PaginatedResponse[CollaboratorRead])
@@ -50,7 +47,7 @@ async def list_collaborators(
         limit=page_size,
     )
     return PaginatedResponse(
-        data=[CollaboratorRead.from_entity(c) for c in collaborators],
+        data=collaborators,
         pagination=build_pagination_meta(page=page, page_size=page_size, total=total),
     )
 
@@ -62,10 +59,7 @@ async def list_collaborators_by_raffle(
     active_only: Annotated[bool, Query()] = False,
 ) -> SuccessResponse[list[CollaboratorRead]]:
     collaborators = await use_cases.list_by_raffle(raffle_id, active_only=active_only)
-    return SuccessResponse(
-        message="Collaborators retrieved.",
-        data=[CollaboratorRead.from_entity(c) for c in collaborators],
-    )
+    return SuccessResponse(message="Collaborators retrieved.", data=collaborators)
 
 
 @router.get("/raffle/{raffle_id}/stats", response_model=SuccessResponse[list[CollaboratorStats]])
@@ -81,9 +75,7 @@ async def get_collaborator(
     collaborator_id: uuid.UUID, use_cases: CollaboratorUseCasesDep
 ) -> SuccessResponse[CollaboratorRead]:
     collaborator = await use_cases.get(collaborator_id)
-    return SuccessResponse(
-        message="Collaborator retrieved.", data=CollaboratorRead.from_entity(collaborator)
-    )
+    return SuccessResponse(message="Collaborator retrieved.", data=collaborator)
 
 
 @router.put("/{collaborator_id}", response_model=SuccessResponse[CollaboratorRead])
@@ -91,9 +83,7 @@ async def update_collaborator(
     collaborator_id: uuid.UUID, payload: CollaboratorUpdate, use_cases: CollaboratorUseCasesDep
 ) -> SuccessResponse[CollaboratorRead]:
     collaborator = await use_cases.update(collaborator_id, payload)
-    return SuccessResponse(
-        message="Collaborator updated.", data=CollaboratorRead.from_entity(collaborator)
-    )
+    return SuccessResponse(message="Collaborator updated.", data=collaborator)
 
 
 @router.patch("/{collaborator_id}/activate", response_model=SuccessResponse[CollaboratorRead])
@@ -101,9 +91,7 @@ async def activate_collaborator(
     collaborator_id: uuid.UUID, use_cases: CollaboratorUseCasesDep
 ) -> SuccessResponse[CollaboratorRead]:
     collaborator = await use_cases.set_active(collaborator_id, is_active=True)
-    return SuccessResponse(
-        message="Collaborator activated.", data=CollaboratorRead.from_entity(collaborator)
-    )
+    return SuccessResponse(message="Collaborator activated.", data=collaborator)
 
 
 @router.patch("/{collaborator_id}/deactivate", response_model=SuccessResponse[CollaboratorRead])
@@ -111,9 +99,7 @@ async def deactivate_collaborator(
     collaborator_id: uuid.UUID, use_cases: CollaboratorUseCasesDep
 ) -> SuccessResponse[CollaboratorRead]:
     collaborator = await use_cases.set_active(collaborator_id, is_active=False)
-    return SuccessResponse(
-        message="Collaborator deactivated.", data=CollaboratorRead.from_entity(collaborator)
-    )
+    return SuccessResponse(message="Collaborator deactivated.", data=collaborator)
 
 
 @router.delete("/{collaborator_id}", response_model=SuccessResponse[dict[str, bool]])

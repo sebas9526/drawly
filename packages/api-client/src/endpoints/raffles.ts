@@ -6,7 +6,8 @@ import type {
   GenerateTicketsResult,
   ListRafflesQuery,
   RaffleDto,
-  SelectWinnerResult,
+  RegisterWinnerRequest,
+  RegisterWinnerResult,
   UpdateRaffleRequest,
 } from '../dto/raffle';
 
@@ -38,7 +39,10 @@ export function createRafflesEndpoints(client: ApiClient) {
 
     close: (id: string): Promise<RaffleDto> => client.patch<RaffleDto>(`${BASE_PATH}/${id}/close`),
 
-    selectWinner: (id: string): Promise<SelectWinnerResult> =>
-      client.post<SelectWinnerResult>(`${BASE_PATH}/${id}/winner`),
+    /** Manual winner entry: looks up the ticket by number, confirms it as
+     * winner and closes the raffle if it's paid, or just records the
+     * attempt (raffle stays open) if it isn't yet. */
+    registerWinner: (id: string, payload: RegisterWinnerRequest): Promise<RegisterWinnerResult> =>
+      client.patch<RegisterWinnerResult>(`${BASE_PATH}/${id}/winner`, payload),
   };
 }

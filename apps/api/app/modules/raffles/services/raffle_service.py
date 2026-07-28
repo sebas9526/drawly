@@ -2,7 +2,11 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from app.modules.raffles.exceptions import RaffleNotEditableError, RaffleNotPublishableError
+from app.modules.raffles.exceptions import (
+    RaffleNotEditableError,
+    RaffleNotOpenForWinnerError,
+    RaffleNotPublishableError,
+)
 from app.modules.raffles.models import Raffle, RaffleStatus
 from app.modules.raffles.schemas import RaffleCreate, RaffleUpdate
 from app.modules.raffles.validators import slugify
@@ -68,6 +72,34 @@ class RaffleService:
     @staticmethod
     def publish(raffle: Raffle) -> Raffle:
         raffle.status = RaffleStatus.PUBLISHED
+        return raffle
+
+    @staticmethod
+    def ensure_open_for_winner(raffle: Raffle) -> None:
+        """A winner can only be registered on a published raffle — not a
+        draft (nothing to draw from) and not an already-closed one (a valid
+        winner was already confirmed)."""
+        if raffle.status is not RaffleStatus.PUBLISHED:
+            raise RaffleNotOpenForWinnerError()
+
+    @staticmethod
+    def close_with_winner(raffle: Raffle, ticket_id: uuid.UUID, now: datetime) -> Raffle:
+        """A *valid* (paid) winner closes the raffle immediately — no more
+        reservations/payments afterward (TicketService.ensure_raffle_open
+        already rejects any non-PUBLISHED raffle). ``closed_at`` is what the
+        cleanup sweep uses to soft-delete the raffle a fixed grace period
+        later."""
+        raffle.status = RaffleStatus.CLOSED
+        raffle.closed_at = now
+        raffle.winner_ticket_id = ticket_id
+        return raffle
+
+    @staticmethod
+    def record_winner_attempt(raffle: Raffle, ticket_id: uuid.UUID) -> Raffle:
+        """An *invalid* attempt (the entered number wasn't paid): recorded so
+        the organizer can see it happened, but the raffle stays published —
+        this isn't a hard block, they can just try another number."""
+        raffle.winner_ticket_id = ticket_id
         return raffle
 
     @classmethod

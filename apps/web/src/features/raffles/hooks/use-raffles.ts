@@ -1,6 +1,7 @@
 import type {
   CreateRaffleRequest,
   ListRafflesQuery,
+  RegisterWinnerRequest,
   UpdateRaffleRequest,
 } from '@drawly/api-client';
 import { fetchAllPages } from '@drawly/api-client';
@@ -52,6 +53,20 @@ export function usePublishRaffle() {
   return useMutation({
     mutationFn: (raffleId: string) => api.raffles.publish(raffleId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.raffles }),
+  });
+}
+
+export function useRegisterWinner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; payload: RegisterWinnerRequest }) =>
+      api.raffles.registerWinner(input.id, input.payload),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.raffles });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.raffle(variables.id) });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets(variables.id) });
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.raffleTicketCounts(variables.id) });
+    },
   });
 }
 

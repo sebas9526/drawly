@@ -3,6 +3,8 @@ from .raffle import (
     RaffleCreate,
     RaffleRead,
     RaffleUpdate,
+    RegisterWinnerRequest,
+    RegisterWinnerResult,
 )
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "RaffleCreate",
     "RaffleRead",
     "RaffleUpdate",
+    "RegisterWinnerRequest",
+    "RegisterWinnerResult",
 ]

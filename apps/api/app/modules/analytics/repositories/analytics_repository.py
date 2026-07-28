@@ -30,7 +30,7 @@ from sqlalchemy.sql import func
 from sqlmodel import col, select
 
 from app.modules.analytics.schemas import AnalyticsFilters
-from app.modules.collaborators.models import Collaborator
+from app.modules.collaborators.models import Collaborator, CollaboratorRaffle
 from app.modules.participants.models import Participant
 from app.modules.raffles.models import Raffle, RaffleStatus
 from app.modules.tickets.models import Ticket, TicketStatus
@@ -295,18 +295,26 @@ class AnalyticsRepository:
             select(  # type: ignore[call-overload]  # see raffles_report_rows
                 Collaborator.id,
                 Collaborator.name,
-                Collaborator.raffle_id,
+                CollaboratorRaffle.raffle_id,
                 Raffle.title,
                 Ticket.status,
                 func.count(col(Ticket.id)),
                 func.coalesce(func.sum(Raffle.ticket_price), 0),
             )
             .select_from(Collaborator)
-            .join(Raffle, col(Raffle.id) == col(Collaborator.raffle_id))
+            .join(
+                CollaboratorRaffle,
+                and_(
+                    col(CollaboratorRaffle.collaborator_id) == col(Collaborator.id),
+                    col(CollaboratorRaffle.deleted_at).is_(None),
+                ),
+            )
+            .join(Raffle, col(Raffle.id) == col(CollaboratorRaffle.raffle_id))
             .join(
                 Ticket,
                 and_(
                     col(Ticket.collaborator_id) == col(Collaborator.id),
+                    col(Ticket.raffle_id) == col(CollaboratorRaffle.raffle_id),
                     col(Ticket.deleted_at).is_(None),
                     col(Ticket.status).in_(_COUNTED_TICKET_STATUSES),
                 ),
@@ -319,7 +327,7 @@ class AnalyticsRepository:
             )
         )
         if filters.raffle_id is not None:
-            statement = statement.where(Collaborator.raffle_id == filters.raffle_id)
+            statement = statement.where(CollaboratorRaffle.raffle_id == filters.raffle_id)
         if filters.collaborator_id is not None:
             statement = statement.where(Collaborator.id == filters.collaborator_id)
         if filters.start_date is not None:
@@ -338,7 +346,7 @@ class AnalyticsRepository:
         statement = statement.group_by(
             col(Collaborator.id),
             col(Collaborator.name),
-            col(Collaborator.raffle_id),
+            col(CollaboratorRaffle.raffle_id),
             col(Raffle.title),
             col(Ticket.status),
         )

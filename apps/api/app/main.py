@@ -12,7 +12,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.scheduler import PeriodicTask
 from app.database.session import get_engine
 from app.middleware.request_id import RequestIDMiddleware
-from app.modules.raffles.dependencies import sweep_scheduled_raffles
+from app.modules.raffles.dependencies import sweep_closed_raffles, sweep_scheduled_raffles
 from app.modules.tickets.dependencies import sweep_expired_reservations
 
 logging.basicConfig(level=logging.INFO)
@@ -41,12 +41,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         )
         publish_sweep_task.start()
 
+    cleanup_sweep_task: PeriodicTask | None = None
+    if settings.raffle_cleanup_sweep_enabled:
+        cleanup_sweep_task = PeriodicTask(
+            name="raffle-cleanup-sweep",
+            interval_seconds=settings.raffle_cleanup_sweep_interval_seconds,
+            job=_run_raffle_cleanup_sweep,
+        )
+        cleanup_sweep_task.start()
+
     yield
 
     if sweep_task is not None:
         await sweep_task.stop()
     if publish_sweep_task is not None:
         await publish_sweep_task.stop()
+    if cleanup_sweep_task is not None:
+        await cleanup_sweep_task.stop()
     await get_engine().dispose()
 
 
@@ -67,6 +78,16 @@ async def _run_raffle_publish_sweep() -> None:
             "Raffle publish sweep activated %d scheduled raffle(s): %s",
             len(published),
             [str(raffle.id) for raffle in published],
+        )
+
+
+async def _run_raffle_cleanup_sweep() -> None:
+    cleaned = await sweep_closed_raffles()
+    if cleaned:
+        logger.info(
+            "Raffle cleanup sweep deleted %d concluded raffle(s): %s",
+            len(cleaned),
+            [str(raffle.id) for raffle in cleaned],
         )
 
 
