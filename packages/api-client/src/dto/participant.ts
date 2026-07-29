@@ -13,6 +13,8 @@ export interface ParticipantDto {
   city: string | null;
   notes: string | null;
   ticket_count: number;
+  /** Ascending; empty when the participant holds no tickets. */
+  ticket_numbers: number[];
   created_at: string;
   updated_at: string;
 }

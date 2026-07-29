@@ -98,6 +98,31 @@ async def test_assign_participant_to_multiple_tickets(api_client: AsyncClient) -
 
     detail = await api_client.get(f"{API}/participants/{pid}")
     assert detail.json()["data"]["ticket_count"] == 2
+    assert sorted(detail.json()["data"]["ticket_numbers"]) == sorted(
+        t["number"] for t in tickets[:2]
+    )
+
+
+async def test_ticket_numbers_appear_in_the_participants_list(api_client: AsyncClient) -> None:
+    raffle_id = await _create_raffle(api_client, total_tickets=3)
+    tickets = await _generate_and_list_tickets(api_client, raffle_id)
+    with_tickets = await _create_participant(api_client, phone="3003333")
+    without_tickets = await _create_participant(
+        api_client, full_name="Sin boletas", phone="3004444"
+    )
+
+    for ticket in tickets[:2]:
+        await api_client.patch(
+            f"{API}/tickets/{ticket['id']}/participant",
+            json={"participant_id": with_tickets["id"]},
+        )
+
+    listed = await api_client.get(f"{API}/participants")
+    rows = {row["id"]: row for row in listed.json()["data"]}
+    assert sorted(rows[with_tickets["id"]]["ticket_numbers"]) == sorted(
+        t["number"] for t in tickets[:2]
+    )
+    assert rows[without_tickets["id"]]["ticket_numbers"] == []
 
 
 async def test_ticket_has_single_participant_and_can_be_changed(api_client: AsyncClient) -> None:

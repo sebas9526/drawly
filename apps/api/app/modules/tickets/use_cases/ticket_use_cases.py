@@ -222,6 +222,11 @@ class TicketUseCases:
     async def list_by_participant(self, participant_id: uuid.UUID) -> list[Ticket]:
         return await self._repository.list_by_participant(participant_id)
 
+    async def numbers_by_participants(
+        self, participant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[int]]:
+        return await self._repository.numbers_by_participants(participant_ids)
+
     # --- raffles TicketProvisioning port (count) + public reads ---
 
     async def count_for_raffle(self, raffle_id: uuid.UUID) -> int:

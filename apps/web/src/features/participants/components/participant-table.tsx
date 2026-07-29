@@ -47,9 +47,18 @@ export function ParticipantTable({
       header: 'Boletas',
       sortable: true,
       sortValue: (p) => p.ticket_count,
-      render: (p) => (
-        <Badge tone={p.ticket_count > 0 ? 'primary' : 'neutral'}>{p.ticket_count}</Badge>
-      ),
+      render: (p) =>
+        p.ticket_numbers.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {p.ticket_numbers.map((number) => (
+              <Badge key={number} tone="primary">
+                #{number}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <Badge tone="neutral">0</Badge>
+        ),
     },
     {
       key: 'status',

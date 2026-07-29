@@ -52,7 +52,10 @@ class ParticipantUseCases:
     async def get(self, participant_id: uuid.UUID) -> ParticipantRead:
         participant = await self._require(participant_id)
         count = await self._tickets.count_by_participant(participant_id)
-        return ParticipantRead.from_entity(participant, ticket_count=count)
+        numbers = await self._tickets.numbers_by_participants([participant_id])
+        return ParticipantRead.from_entity(
+            participant, ticket_count=count, ticket_numbers=numbers.get(participant_id, [])
+        )
 
     async def list_participants(
         self, *, search: str | None, offset: int, limit: int
@@ -60,9 +63,14 @@ class ParticipantUseCases:
         participants, total = await self._repository.list_paginated(
             search=search, offset=offset, limit=limit, owner_id=self._owner_id
         )
-        counts = await self._tickets.count_by_participants([p.id for p in participants])
+        ids = [p.id for p in participants]
+        counts = await self._tickets.count_by_participants(ids)
+        numbers = await self._tickets.numbers_by_participants(ids)
         reads = [
-            ParticipantRead.from_entity(p, ticket_count=counts.get(p.id, 0)) for p in participants
+            ParticipantRead.from_entity(
+                p, ticket_count=counts.get(p.id, 0), ticket_numbers=numbers.get(p.id, [])
+            )
+            for p in participants
         ]
         return reads, total
 
@@ -79,7 +87,10 @@ class ParticipantUseCases:
         saved = await self._repository.save(participant)
         await self._session.commit()
         count = await self._tickets.count_by_participant(participant_id)
-        return ParticipantRead.from_entity(saved, ticket_count=count)
+        numbers = await self._tickets.numbers_by_participants([participant_id])
+        return ParticipantRead.from_entity(
+            saved, ticket_count=count, ticket_numbers=numbers.get(participant_id, [])
+        )
 
     async def delete(self, participant_id: uuid.UUID) -> None:
         participant = await self._require(participant_id)

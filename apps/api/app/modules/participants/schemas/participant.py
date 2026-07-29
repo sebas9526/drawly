@@ -48,11 +48,18 @@ class ParticipantRead(BaseModel):
     city: str | None
     notes: str | None
     ticket_count: int
+    ticket_numbers: list[int]
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_entity(cls, participant: Participant, *, ticket_count: int = 0) -> "ParticipantRead":
+    def from_entity(
+        cls,
+        participant: Participant,
+        *,
+        ticket_count: int = 0,
+        ticket_numbers: list[int] | None = None,
+    ) -> "ParticipantRead":
         return cls(
             id=participant.id,
             full_name=participant.full_name,
@@ -63,6 +70,7 @@ class ParticipantRead(BaseModel):
             city=participant.city,
             notes=participant.notes,
             ticket_count=ticket_count,
+            ticket_numbers=ticket_numbers or [],
             created_at=participant.created_at,
             updated_at=participant.updated_at,
         )

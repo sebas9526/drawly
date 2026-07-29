@@ -204,6 +204,27 @@ class TicketRepository:
         result = await self._session.execute(statement)
         return {row[0]: int(row[1]) for row in result.all() if row[0] is not None}
 
+    async def numbers_by_participants(
+        self, participant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[int]]:
+        """Batch lookup — the ticket numbers each participant holds, so the
+        admin table can show them without an N+1 (mirrors count_by_participants)."""
+        ids = list(participant_ids)
+        if not ids:
+            return {}
+        statement = (
+            select(Ticket.participant_id, Ticket.number)
+            .where(col(Ticket.participant_id).in_(ids), col(Ticket.deleted_at).is_(None))
+            .order_by(col(Ticket.participant_id), col(Ticket.number).asc())
+        )
+        result = await self._session.execute(statement)
+        out: dict[uuid.UUID, list[int]] = {}
+        for participant_id, number in result.all():
+            if participant_id is None:
+                continue
+            out.setdefault(participant_id, []).append(int(number))
+        return out
+
     async def counts_by_collaborator(
         self, raffle_id: uuid.UUID
     ) -> dict[uuid.UUID, tuple[int, int]]:
