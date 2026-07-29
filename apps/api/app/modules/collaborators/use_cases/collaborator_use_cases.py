@@ -164,6 +164,11 @@ class CollaboratorUseCases:
         await self._session.commit()
         return await self.list_by_raffle(raffle_id)
 
+    async def names_by_ids(self, collaborator_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, str]:
+        """ParticipantCollaborators port: resolves seller names for the
+        participants admin table."""
+        return await self._repository.names_by_ids(collaborator_ids)
+
     async def list_published_raffles(self, collaborator_id: uuid.UUID) -> list[Raffle] | None:
         """PublicCollaborators port: a collaborator's published raffles, for
         the personal referral link. None if the collaborator doesn't exist,

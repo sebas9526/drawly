@@ -133,6 +133,21 @@ class CollaboratorRepository:
         result = await self._session.execute(statement)
         return result.scalars().first() is not None
 
+    async def names_by_ids(self, collaborator_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, str]:
+        """Batch name lookup — e.g. for the participants module to show who
+        sold a ticket without exposing the full Collaborator entity."""
+        ids = list(collaborator_ids)
+        if not ids:
+            return {}
+        statement = select(Collaborator.id, Collaborator.name).where(
+            col(Collaborator.id).in_(ids), col(Collaborator.deleted_at).is_(None)
+        )
+        result = await self._session.execute(statement)
+        out: dict[uuid.UUID, str] = {}
+        for collaborator_id, name in result.all():
+            out[collaborator_id] = name
+        return out
+
     async def list_raffle_ids_by_collaborators(
         self, collaborator_ids: Sequence[uuid.UUID]
     ) -> dict[uuid.UUID, list[uuid.UUID]]:

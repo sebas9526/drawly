@@ -125,6 +125,60 @@ async def test_ticket_numbers_appear_in_the_participants_list(api_client: AsyncC
     assert rows[without_tickets["id"]]["ticket_numbers"] == []
 
 
+async def _create_collaborator(client: AsyncClient, raffle_id: str, *, name: str) -> dict[str, Any]:
+    response = await client.post(
+        f"{API}/collaborators",
+        json={"raffle_ids": [raffle_id], "name": name, "color": "#4F46E5"},
+    )
+    assert response.status_code == 201, response.text
+    return dict(response.json()["data"])
+
+
+async def test_collaborator_names_show_who_sold_each_ticket(api_client: AsyncClient) -> None:
+    raffle_id = await _create_raffle(api_client, total_tickets=3)
+    tickets = await _generate_and_list_tickets(api_client, raffle_id)
+    ana = await _create_collaborator(api_client, raffle_id, name="Ana")
+    beto = await _create_collaborator(api_client, raffle_id, name="Beto")
+    participant = await _create_participant(api_client)
+    pid = participant["id"]
+
+    # Two tickets sold by two different collaborators, one with none at all.
+    await api_client.patch(
+        f"{API}/tickets/{tickets[0]['id']}/participant", json={"participant_id": pid}
+    )
+    await api_client.patch(
+        f"{API}/tickets/{tickets[0]['id']}/collaborator", json={"collaborator_id": ana["id"]}
+    )
+    await api_client.patch(
+        f"{API}/tickets/{tickets[1]['id']}/participant", json={"participant_id": pid}
+    )
+    await api_client.patch(
+        f"{API}/tickets/{tickets[1]['id']}/collaborator", json={"collaborator_id": beto["id"]}
+    )
+    await api_client.patch(
+        f"{API}/tickets/{tickets[2]['id']}/participant", json={"participant_id": pid}
+    )
+
+    detail = await api_client.get(f"{API}/participants/{pid}")
+    assert detail.json()["data"]["collaborator_names"] == ["Ana", "Beto"]
+
+    listed = await api_client.get(f"{API}/participants")
+    row = next(p for p in listed.json()["data"] if p["id"] == pid)
+    assert row["collaborator_names"] == ["Ana", "Beto"]
+
+
+async def test_participant_without_a_collaborator_has_no_seller(api_client: AsyncClient) -> None:
+    raffle_id = await _create_raffle(api_client)
+    ticket = (await _generate_and_list_tickets(api_client, raffle_id))[0]
+    participant = await _create_participant(api_client)
+    await api_client.patch(
+        f"{API}/tickets/{ticket['id']}/participant", json={"participant_id": participant["id"]}
+    )
+
+    detail = await api_client.get(f"{API}/participants/{participant['id']}")
+    assert detail.json()["data"]["collaborator_names"] == []
+
+
 async def test_ticket_has_single_participant_and_can_be_changed(api_client: AsyncClient) -> None:
     raffle_id = await _create_raffle(api_client)
     ticket = (await _generate_and_list_tickets(api_client, raffle_id))[0]

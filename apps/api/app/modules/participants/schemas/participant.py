@@ -49,6 +49,7 @@ class ParticipantRead(BaseModel):
     notes: str | None
     ticket_count: int
     ticket_numbers: list[int]
+    collaborator_names: list[str]
     created_at: datetime
     updated_at: datetime
 
@@ -59,6 +60,7 @@ class ParticipantRead(BaseModel):
         *,
         ticket_count: int = 0,
         ticket_numbers: list[int] | None = None,
+        collaborator_names: list[str] | None = None,
     ) -> "ParticipantRead":
         return cls(
             id=participant.id,
@@ -71,6 +73,7 @@ class ParticipantRead(BaseModel):
             notes=participant.notes,
             ticket_count=ticket_count,
             ticket_numbers=ticket_numbers or [],
+            collaborator_names=collaborator_names or [],
             created_at=participant.created_at,
             updated_at=participant.updated_at,
         )

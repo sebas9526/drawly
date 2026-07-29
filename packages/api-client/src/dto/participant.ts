@@ -15,6 +15,8 @@ export interface ParticipantDto {
   ticket_count: number;
   /** Ascending; empty when the participant holds no tickets. */
   ticket_numbers: number[];
+  /** Sellers credited on this participant's tickets, alphabetical, deduped. */
+  collaborator_names: string[];
   created_at: string;
   updated_at: string;
 }

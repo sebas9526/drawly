@@ -61,6 +61,22 @@ export function ParticipantTable({
         ),
     },
     {
+      key: 'seller',
+      header: 'Vendedor',
+      render: (p) =>
+        p.collaborator_names.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {p.collaborator_names.map((name) => (
+              <Badge key={name} tone="neutral">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-text-secondary">—</span>
+        ),
+    },
+    {
       key: 'status',
       header: 'Estado',
       sortable: true,

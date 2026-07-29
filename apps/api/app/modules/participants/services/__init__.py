@@ -1,4 +1,4 @@
 from .participant_service import ParticipantService
-from .ports import ParticipantTickets
+from .ports import ParticipantCollaborators, ParticipantTickets
 
-__all__ = ["ParticipantService", "ParticipantTickets"]
+__all__ = ["ParticipantCollaborators", "ParticipantService", "ParticipantTickets"]

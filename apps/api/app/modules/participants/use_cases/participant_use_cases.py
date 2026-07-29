@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,26 +14,34 @@ from app.modules.participants.schemas import (
     ParticipantRead,
     ParticipantUpdate,
 )
-from app.modules.participants.services import ParticipantService, ParticipantTickets
+from app.modules.participants.services import (
+    ParticipantCollaborators,
+    ParticipantService,
+    ParticipantTickets,
+)
 from app.modules.tickets.models import Ticket
 
 
 class ParticipantUseCases:
     """Application layer: orchestrates repository + domain service + the tickets
-    port, and owns the transaction boundary. Ticket counts/history come from the
-    tickets module through the ``ParticipantTickets`` port (never a direct join)."""
+    and collaborators ports, and owns the transaction boundary. Ticket
+    counts/history come from the tickets module through the
+    ``ParticipantTickets`` port; seller names come from the collaborators
+    module through ``ParticipantCollaborators`` (never a direct join)."""
 
     def __init__(
         self,
         session: AsyncSession,
         repository: ParticipantRepository,
         tickets: ParticipantTickets,
+        collaborators: ParticipantCollaborators,
         service: ParticipantService | None = None,
         owner_id: uuid.UUID | None = None,
     ) -> None:
         self._session = session
         self._repository = repository
         self._tickets = tickets
+        self._collaborators = collaborators
         self._service = service or ParticipantService()
         # Owner bound at composition time. Set for the admin surface (scopes every
         # read/mutation to the caller); None for the public find-or-create port,
@@ -53,8 +62,12 @@ class ParticipantUseCases:
         participant = await self._require(participant_id)
         count = await self._tickets.count_by_participant(participant_id)
         numbers = await self._tickets.numbers_by_participants([participant_id])
+        names = await self._collaborator_names_by_participants([participant_id])
         return ParticipantRead.from_entity(
-            participant, ticket_count=count, ticket_numbers=numbers.get(participant_id, [])
+            participant,
+            ticket_count=count,
+            ticket_numbers=numbers.get(participant_id, []),
+            collaborator_names=names.get(participant_id, []),
         )
 
     async def list_participants(
@@ -66,9 +79,13 @@ class ParticipantUseCases:
         ids = [p.id for p in participants]
         counts = await self._tickets.count_by_participants(ids)
         numbers = await self._tickets.numbers_by_participants(ids)
+        names = await self._collaborator_names_by_participants(ids)
         reads = [
             ParticipantRead.from_entity(
-                p, ticket_count=counts.get(p.id, 0), ticket_numbers=numbers.get(p.id, [])
+                p,
+                ticket_count=counts.get(p.id, 0),
+                ticket_numbers=numbers.get(p.id, []),
+                collaborator_names=names.get(p.id, []),
             )
             for p in participants
         ]
@@ -88,8 +105,12 @@ class ParticipantUseCases:
         await self._session.commit()
         count = await self._tickets.count_by_participant(participant_id)
         numbers = await self._tickets.numbers_by_participants([participant_id])
+        names = await self._collaborator_names_by_participants([participant_id])
         return ParticipantRead.from_entity(
-            saved, ticket_count=count, ticket_numbers=numbers.get(participant_id, [])
+            saved,
+            ticket_count=count,
+            ticket_numbers=numbers.get(participant_id, []),
+            collaborator_names=names.get(participant_id, []),
         )
 
     async def delete(self, participant_id: uuid.UUID) -> None:
@@ -118,6 +139,17 @@ class ParticipantUseCases:
         created = await self._repository.add(participant)
         await self._session.commit()
         return created
+
+    async def _collaborator_names_by_participants(
+        self, participant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[str]]:
+        ids_by_participant = await self._tickets.collaborator_ids_by_participants(participant_ids)
+        all_collaborator_ids = {cid for ids in ids_by_participant.values() for cid in ids}
+        names = await self._collaborators.names_by_ids(list(all_collaborator_ids))
+        return {
+            participant_id: sorted({names[cid] for cid in cids if cid in names})
+            for participant_id, cids in ids_by_participant.items()
+        }
 
     async def _require(self, participant_id: uuid.UUID) -> Participant:
         participant = await self._repository.get(participant_id, owner_id=self._owner_id)

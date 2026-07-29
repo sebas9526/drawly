@@ -225,6 +225,32 @@ class TicketRepository:
             out.setdefault(participant_id, []).append(int(number))
         return out
 
+    async def collaborator_ids_by_participants(
+        self, participant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[uuid.UUID]]:
+        """Batch lookup — the distinct collaborators (sellers) credited on
+        each participant's tickets, so the admin table can show "who sold
+        it" without an N+1 (mirrors numbers_by_participants)."""
+        ids = list(participant_ids)
+        if not ids:
+            return {}
+        statement = (
+            select(Ticket.participant_id, Ticket.collaborator_id)
+            .where(
+                col(Ticket.participant_id).in_(ids),
+                col(Ticket.collaborator_id).is_not(None),
+                col(Ticket.deleted_at).is_(None),
+            )
+            .distinct()
+        )
+        result = await self._session.execute(statement)
+        out: dict[uuid.UUID, list[uuid.UUID]] = {}
+        for participant_id, collaborator_id in result.all():
+            if participant_id is None or collaborator_id is None:
+                continue
+            out.setdefault(participant_id, []).append(collaborator_id)
+        return out
+
     async def counts_by_collaborator(
         self, raffle_id: uuid.UUID
     ) -> dict[uuid.UUID, tuple[int, int]]:

@@ -63,4 +63,13 @@ def get_public_collaborators(
     return _build(session, None)
 
 
+def get_participant_collaborators(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CollaboratorUseCases:
+    """Exposes CollaboratorUseCases as the participants module's
+    ParticipantCollaborators port (name_by_ids). Unscoped: a ticket's
+    collaborator_id already implies ownership via the ticket/raffle chain."""
+    return _build(session, None)
+
+
 CollaboratorUseCasesDep = Annotated[CollaboratorUseCases, Depends(get_collaborator_use_cases)]

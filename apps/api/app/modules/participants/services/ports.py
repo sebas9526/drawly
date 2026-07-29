@@ -25,3 +25,17 @@ class ParticipantTickets(Protocol):
     async def numbers_by_participants(
         self, participant_ids: Sequence[uuid.UUID]
     ) -> dict[uuid.UUID, list[int]]: ...
+
+    async def collaborator_ids_by_participants(
+        self, participant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[uuid.UUID]]: ...
+
+
+class ParticipantCollaborators(Protocol):
+    """Port the participants module uses to resolve collaborator (seller)
+    names — the tickets module knows collaborator_ids, but not names, which
+    belong to the collaborators module. Coupling stays one-directional
+    (participants -> collaborators); collaborators does not import
+    participants."""
+
+    async def names_by_ids(self, collaborator_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, str]: ...
