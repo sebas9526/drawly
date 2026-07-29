@@ -97,6 +97,11 @@ export function RaffleCard({
               <Clock size={12} /> Se activa: {formatDrawDate(raffle.publish_at)}
             </p>
           )}
+          {raffle.status === 'draft' && (
+            <p className="text-warning text-xs font-medium">
+              Nadie puede verla ni reservar boletas todavía — publícala cuando esté lista.
+            </p>
+          )}
         </div>
 
         <ActionMenu
