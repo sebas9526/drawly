@@ -52,6 +52,16 @@ class CollaboratorUpdate(CollaboratorBase):
     is_active: bool | None = None
 
 
+class SetRaffleCollaboratorsRequest(BaseModel):
+    """Replaces the full set of collaborators linked to a raffle — driven
+    from the raffle form. Unlike CollaboratorCreate/Update.raffle_ids, an
+    empty list is valid (a raffle can end up with zero collaborators)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    collaborator_ids: list[uuid.UUID]
+
+
 class CollaboratorRead(BaseModel):
     id: uuid.UUID
     raffle_ids: list[uuid.UUID]

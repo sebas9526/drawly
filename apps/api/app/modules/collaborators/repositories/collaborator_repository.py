@@ -175,6 +175,32 @@ class CollaboratorRepository:
             )
         await self._session.flush()
 
+    async def set_collaborators_for_raffle(
+        self, raffle_id: uuid.UUID, collaborator_ids: Sequence[uuid.UUID]
+    ) -> None:
+        """Replaces the raffle's full set of collaborator links: soft-deletes
+        every current (non-deleted) link, then inserts a fresh row per id in
+        ``collaborator_ids``. Mirror of ``set_raffles``, keyed by raffle
+        instead of by collaborator — lets a raffle's collaborator set be
+        edited from the raffle form without touching each collaborator's own
+        other raffle links."""
+        now = utcnow()
+        existing = await self._session.execute(
+            select(CollaboratorRaffle).where(
+                CollaboratorRaffle.raffle_id == raffle_id,
+                col(CollaboratorRaffle.deleted_at).is_(None),
+            )
+        )
+        for link in existing.scalars().all():
+            link.deleted_at = now
+            link.updated_at = now
+            self._session.add(link)
+        for collaborator_id in collaborator_ids:
+            self._session.add(
+                CollaboratorRaffle(collaborator_id=collaborator_id, raffle_id=raffle_id)
+            )
+        await self._session.flush()
+
     async def list_published_raffles_for_collaborator(
         self, collaborator_id: uuid.UUID
     ) -> list[Raffle] | None:

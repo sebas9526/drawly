@@ -11,6 +11,7 @@ from app.modules.collaborators.schemas import (
     CollaboratorRead,
     CollaboratorStats,
     CollaboratorUpdate,
+    SetRaffleCollaboratorsRequest,
 )
 
 router = APIRouter()
@@ -68,6 +69,16 @@ async def collaborator_stats_by_raffle(
 ) -> SuccessResponse[list[CollaboratorStats]]:
     stats = await use_cases.stats_by_raffle(raffle_id)
     return SuccessResponse(message="Collaborator stats retrieved.", data=stats)
+
+
+@router.put("/raffle/{raffle_id}", response_model=SuccessResponse[list[CollaboratorRead]])
+async def set_collaborators_for_raffle(
+    raffle_id: uuid.UUID,
+    payload: SetRaffleCollaboratorsRequest,
+    use_cases: CollaboratorUseCasesDep,
+) -> SuccessResponse[list[CollaboratorRead]]:
+    collaborators = await use_cases.set_for_raffle(raffle_id, payload.collaborator_ids)
+    return SuccessResponse(message="Raffle collaborators updated.", data=collaborators)
 
 
 @router.get("/{collaborator_id}", response_model=SuccessResponse[CollaboratorRead])

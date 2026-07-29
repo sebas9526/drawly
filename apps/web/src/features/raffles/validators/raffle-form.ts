@@ -27,6 +27,9 @@ export const createRaffleFormSchema = z.object({
     .string()
     .optional()
     .transform((value) => (value && value.trim() !== '' ? value : undefined)),
+  // Not part of the raffle API payload (POST/PUT /raffles forbid unknown
+  // fields) — sent separately via PUT /collaborators/raffle/{id} on submit.
+  collaborator_ids: z.array(z.string()).default([]),
 });
 
 export interface CreateRaffleFormValues {
@@ -38,4 +41,5 @@ export interface CreateRaffleFormValues {
   starting_number: string;
   draw_date: string;
   publish_at: string;
+  collaborator_ids: string[];
 }

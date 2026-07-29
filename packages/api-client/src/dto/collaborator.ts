@@ -32,6 +32,11 @@ export type UpdateCollaboratorRequest = Partial<Omit<CreateCollaboratorRequest, 
   raffle_ids?: string[] | undefined;
 };
 
+export interface SetRaffleCollaboratorsRequest {
+  /** Replaces the raffle's full set of collaborators — empty clears it. */
+  collaborator_ids: string[];
+}
+
 export type CollaboratorSort = 'created_at' | 'name' | 'is_active';
 export type SortOrder = 'asc' | 'desc';
 

@@ -5,4 +5,5 @@ export {
   useCollaborators,
   useCollaboratorStats,
   useRaffleCollaborators,
+  useSetRaffleCollaborators,
 } from './hooks/use-collaborators';

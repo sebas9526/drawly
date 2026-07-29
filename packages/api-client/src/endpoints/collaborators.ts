@@ -6,6 +6,7 @@ import type {
   CollaboratorStatsDto,
   CreateCollaboratorRequest,
   ListCollaboratorsQuery,
+  SetRaffleCollaboratorsRequest,
   UpdateCollaboratorRequest,
 } from '../dto/collaborator';
 
@@ -31,6 +32,12 @@ export function createCollaboratorsEndpoints(client: ApiClient) {
 
     statsByRaffle: (raffleId: string): Promise<CollaboratorStatsDto[]> =>
       client.get<CollaboratorStatsDto[]>(`${BASE_PATH}/raffle/${raffleId}/stats`),
+
+    setForRaffle: (
+      raffleId: string,
+      payload: SetRaffleCollaboratorsRequest,
+    ): Promise<CollaboratorDto[]> =>
+      client.put<CollaboratorDto[]>(`${BASE_PATH}/raffle/${raffleId}`, payload),
 
     create: (payload: CreateCollaboratorRequest): Promise<CollaboratorDto> =>
       client.post<CollaboratorDto>(BASE_PATH, payload),

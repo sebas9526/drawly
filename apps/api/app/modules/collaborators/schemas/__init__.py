@@ -3,6 +3,7 @@ from .collaborator import (
     CollaboratorRead,
     CollaboratorStats,
     CollaboratorUpdate,
+    SetRaffleCollaboratorsRequest,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "CollaboratorRead",
     "CollaboratorStats",
     "CollaboratorUpdate",
+    "SetRaffleCollaboratorsRequest",
 ]

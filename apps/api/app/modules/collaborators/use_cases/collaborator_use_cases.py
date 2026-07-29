@@ -150,6 +150,20 @@ class CollaboratorUseCases:
             )
         return stats
 
+    async def set_for_raffle(
+        self, raffle_id: uuid.UUID, collaborator_ids: Sequence[uuid.UUID]
+    ) -> list[CollaboratorRead]:
+        """Replaces the full set of collaborators linked to a raffle — the
+        mirror of ``update``'s ``raffle_ids`` handling, but driven from the
+        raffle side (used by the raffle form, so organizers don't have to
+        open each collaborator individually to link it)."""
+        await self._require_owned_raffle(raffle_id)
+        for collaborator_id in collaborator_ids:
+            await self._require(collaborator_id)
+        await self._repository.set_collaborators_for_raffle(raffle_id, collaborator_ids)
+        await self._session.commit()
+        return await self.list_by_raffle(raffle_id)
+
     async def list_published_raffles(self, collaborator_id: uuid.UUID) -> list[Raffle] | None:
         """PublicCollaborators port: a collaborator's published raffles, for
         the personal referral link. None if the collaborator doesn't exist,

@@ -229,3 +229,78 @@ async def test_editing_raffle_ids_replaces_the_whole_set(api_client: AsyncClient
     by_b = await api_client.get(f"{API}/collaborators/raffle/{raffle_b}")
     assert by_a.json()["data"] == []
     assert [c["id"] for c in by_b.json()["data"]] == [collaborator["id"]]
+
+
+async def test_set_collaborators_for_raffle_replaces_the_whole_set(api_client: AsyncClient) -> None:
+    """Driven from the raffle form: PUT /collaborators/raffle/{id} replaces
+    who sells that raffle without touching a collaborator's other raffles."""
+    raffle = await _create_raffle(api_client, title="Rifa")
+    other_raffle = await _create_raffle(api_client, title="Otra rifa")
+    ana = await _create_collaborator_for(api_client, [raffle, other_raffle], name="Ana")
+    beto = await _create_collaborator_for(api_client, [raffle], name="Beto")
+    caro = await _create_collaborator_for(api_client, [other_raffle], name="Caro")
+
+    response = await api_client.put(
+        f"{API}/collaborators/raffle/{raffle}",
+        json={"collaborator_ids": [beto["id"], caro["id"]]},
+    )
+    assert response.status_code == 200, response.text
+    assert sorted(c["id"] for c in response.json()["data"]) == sorted([beto["id"], caro["id"]])
+
+    by_raffle = await api_client.get(f"{API}/collaborators/raffle/{raffle}")
+    assert sorted(c["id"] for c in by_raffle.json()["data"]) == sorted([beto["id"], caro["id"]])
+
+    # Ana was dropped from `raffle` but keeps her link to `other_raffle`.
+    ana_after = await api_client.get(f"{API}/collaborators/{ana['id']}")
+    assert ana_after.json()["data"]["raffle_ids"] == [other_raffle]
+
+
+async def test_set_collaborators_for_raffle_accepts_empty_list(api_client: AsyncClient) -> None:
+    raffle = await _create_raffle(api_client)
+    collaborator = await _create_collaborator(api_client, raffle)
+
+    response = await api_client.put(
+        f"{API}/collaborators/raffle/{raffle}", json={"collaborator_ids": []}
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["data"] == []
+
+    by_raffle = await api_client.get(f"{API}/collaborators/raffle/{raffle}")
+    assert by_raffle.json()["data"] == []
+    # The collaborator itself still exists, just unlinked from this raffle.
+    still_there = await api_client.get(f"{API}/collaborators/{collaborator['id']}")
+    assert still_there.status_code == 200
+    assert still_there.json()["data"]["raffle_ids"] == []
+
+
+async def test_set_collaborators_for_raffle_rejects_unowned_raffle(
+    client_factory: ClientFactory,
+) -> None:
+    alice = await client_factory("alice@drawly.test")
+    bob = await client_factory("bob@drawly.test")
+    alice_raffle = await _create_raffle(alice)
+
+    response = await bob.put(
+        f"{API}/collaborators/raffle/{alice_raffle}", json={"collaborator_ids": []}
+    )
+    assert response.status_code == 404
+
+
+async def test_set_collaborators_for_raffle_rejects_unowned_collaborator(
+    client_factory: ClientFactory,
+) -> None:
+    alice = await client_factory("alice@drawly.test")
+    bob = await client_factory("bob@drawly.test")
+    alice_raffle = await _create_raffle(alice)
+    bob_raffle = await _create_raffle(bob)
+    bob_collaborator = await _create_collaborator(bob, bob_raffle, name="Intruso")
+
+    response = await alice.put(
+        f"{API}/collaborators/raffle/{alice_raffle}",
+        json={"collaborator_ids": [bob_collaborator["id"]]},
+    )
+    assert response.status_code == 404
+
+    # Nothing was linked — the raffle still has zero collaborators.
+    by_raffle = await alice.get(f"{API}/collaborators/raffle/{alice_raffle}")
+    assert by_raffle.json()["data"] == []

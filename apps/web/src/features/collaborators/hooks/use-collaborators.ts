@@ -1,6 +1,7 @@
 import type {
   CreateCollaboratorRequest,
   ListCollaboratorsQuery,
+  SetRaffleCollaboratorsRequest,
   UpdateCollaboratorRequest,
 } from '@drawly/api-client';
 import { fetchAllPages } from '@drawly/api-client';
@@ -71,6 +72,15 @@ export function useSetCollaboratorActive() {
       input.isActive
         ? api.collaborators.activate(input.id)
         : api.collaborators.deactivate(input.id),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetRaffleCollaborators() {
+  const invalidate = useCollaboratorsInvalidator();
+  return useMutation({
+    mutationFn: (input: { raffleId: string; payload: SetRaffleCollaboratorsRequest }) =>
+      api.collaborators.setForRaffle(input.raffleId, input.payload),
     onSuccess: invalidate,
   });
 }
