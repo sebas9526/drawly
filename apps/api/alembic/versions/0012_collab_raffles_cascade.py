@@ -1,6 +1,6 @@
 """collaborator_raffles.raffle_id ON DELETE CASCADE
 
-Revision ID: 0012_collaborator_raffles_cascade_delete
+Revision ID: 0012_collab_raffles_cascade
 Revises: 0011_collaborator_raffles
 Create Date: 2026-07-28
 
@@ -18,7 +18,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0012_collaborator_raffles_cascade_delete"
+revision: str = "0012_collab_raffles_cascade"
 down_revision: str | None = "0011_collaborator_raffles"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
