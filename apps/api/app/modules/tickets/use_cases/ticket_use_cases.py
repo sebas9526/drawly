@@ -256,13 +256,13 @@ class TicketUseCases:
         self._session.add(ticket)
         await self._session.flush()
 
-    async def soft_delete_all_for_raffle(self, raffle_id: uuid.UUID) -> int:
-        """Bulk cleanup for a concluded raffle. Its own atomic operation (no
-        cross-aggregate write in the same call), so it commits itself —
-        unlike ``confirm_winner`` above."""
-        deleted = await self._repository.soft_delete_by_raffle(raffle_id)
-        await self._session.commit()
-        return deleted
+    async def hard_delete_all_for_raffle(self, raffle_id: uuid.UUID) -> int:
+        """Permanently removes every ticket of a raffle. Deliberately flushes
+        but does not commit — the caller (RaffleUseCases.delete) also
+        hard-deletes the raffle row itself in the same transaction, and must
+        null out raffle.winner_ticket_id first (it FKs into tickets), so a
+        single commit keeps the whole "delete a raffle" operation atomic."""
+        return await self._repository.hard_delete_by_raffle(raffle_id)
 
     async def status_counts(self, raffle_id: uuid.UUID) -> dict[TicketStatus, int]:
         return await self._repository.status_counts(raffle_id)

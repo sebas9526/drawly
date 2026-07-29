@@ -105,9 +105,12 @@ class RaffleRepository:
         await self._session.refresh(raffle)
         return raffle
 
-    async def soft_delete(self, raffle: Raffle) -> None:
-        now = utcnow()
-        raffle.deleted_at = now
-        raffle.updated_at = now
-        self._session.add(raffle)
+    async def hard_delete(self, raffle: Raffle) -> None:
+        """Permanently removes the raffle row — the organizer explicitly
+        asked for "Eliminar rifa" to be a real delete, not the soft-delete
+        every other module uses. Caller must have already cleared the
+        raffle's own tickets (RaffleUseCases.delete) — collaborator_raffles
+        links are handled by the DB itself (ON DELETE CASCADE, see migration
+        0012)."""
+        await self._session.delete(raffle)
         await self._session.flush()

@@ -22,4 +22,8 @@ class CollaboratorRaffle(UUIDAuditBase, table=True):
     __table_args__ = (Index("ix_collaborator_raffles_pair", "collaborator_id", "raffle_id"),)
 
     collaborator_id: uuid.UUID = Field(foreign_key="collaborators.id", index=True)
-    raffle_id: uuid.UUID = Field(foreign_key="raffles.id", index=True)
+    # ON DELETE CASCADE: a raffle hard-delete (RaffleUseCases.delete) should
+    # take its collaborator links with it — this is a pure join table, so the
+    # DB handles that cleanup itself rather than the raffles module needing a
+    # new cross-module port just to clear it (see migration 0012).
+    raffle_id: uuid.UUID = Field(foreign_key="raffles.id", index=True, ondelete="CASCADE")

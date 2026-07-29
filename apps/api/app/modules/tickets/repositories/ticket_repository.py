@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import func, update
+from sqlalchemy import delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
@@ -237,23 +237,22 @@ class TicketRepository:
             out[collaborator_id] = (reserved, paid)
         return out
 
-    async def soft_delete_by_raffle(self, raffle_id: uuid.UUID) -> int:
-        """Bulk-soft-deletes every non-deleted ticket of a raffle. Used only by
-        the closed-raffle cleanup sweep (RaffleUseCases.cleanup_closed_raffles)
-        — a real bulk UPDATE rather than a fetch-then-save loop since a raffle
-        can have up to 100,000 tickets."""
-        count = await self.count_by_raffle(raffle_id)
-        if count == 0:
-            return 0
-        now = utcnow()
-        statement = (
-            update(Ticket)
-            .where(col(Ticket.raffle_id) == raffle_id, col(Ticket.deleted_at).is_(None))
-            .values(deleted_at=now, updated_at=now)
+    async def hard_delete_by_raffle(self, raffle_id: uuid.UUID) -> int:
+        """Permanently removes every ticket of a raffle — including already
+        soft-deleted ones. Used only by the admin "Eliminar rifa" action
+        (RaffleUseCases.delete), which the organizer explicitly asked to be a
+        real delete, not the soft-delete every other module uses."""
+        count = await self._session.execute(
+            select(func.count()).select_from(
+                select(Ticket).where(Ticket.raffle_id == raffle_id).subquery()
+            )
         )
-        await self._session.execute(statement)
+        total = int(count.scalar_one())
+        if total == 0:
+            return 0
+        await self._session.execute(delete(Ticket).where(col(Ticket.raffle_id) == raffle_id))
         await self._session.flush()
-        return count
+        return total
 
     async def list_by_participant(self, participant_id: uuid.UUID) -> list[Ticket]:
         statement = (

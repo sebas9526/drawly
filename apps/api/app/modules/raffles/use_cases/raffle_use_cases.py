@@ -69,14 +69,26 @@ class RaffleUseCases:
         return saved
 
     async def delete(self, raffle_id: uuid.UUID) -> None:
-        """Soft delete. Blocked once any of the raffle's tickets already has a
-        participant assigned (docs/02-architecture/DOMAIN_MODEL.md) — those
-        tickets carry real reservation/purchase history that a delete would
-        orphan."""
+        """Permanent delete — the raffle row and every one of its tickets are
+        actually removed, not soft-deleted (an explicit organizer decision:
+        "Eliminar" should mean gone, everywhere). Still blocked once any of
+        the raffle's tickets already has a participant assigned
+        (docs/02-architecture/DOMAIN_MODEL.md) — real reservation/purchase
+        history is exactly the case this guard exists to protect, now more
+        than ever since there's no soft-delete safety net to recover from.
+        collaborator_raffles links are cleaned up by the DB itself (ON DELETE
+        CASCADE, migration 0012) — a pure join table, not a cross-module
+        concern this use case needs to know about."""
         raffle = await self.get(raffle_id)
         if await self._tickets.count_with_participant_for_raffle(raffle.id) > 0:
             raise RaffleHasParticipantsError()
-        await self._repository.soft_delete(raffle)
+        if raffle.winner_ticket_id is not None:
+            # Clear the raffle's own FK into tickets first — otherwise
+            # hard-deleting its tickets next would violate that constraint.
+            raffle.winner_ticket_id = None
+            await self._repository.save(raffle)
+        await self._tickets.hard_delete_all_for_raffle(raffle.id)
+        await self._repository.hard_delete(raffle)
         await self._session.commit()
 
     async def publish(self, raffle_id: uuid.UUID) -> Raffle:
@@ -123,22 +135,27 @@ class RaffleUseCases:
         return raffle
 
     async def cleanup_closed_raffles(self, *, grace_hours: int) -> list[Raffle]:
-        """System-wide sweep: soft-deletes every CLOSED raffle (and its
-        tickets) once it's been closed for at least ``grace_hours``. Not
-        owner-scoped, same as publish_scheduled_raffles. Deliberately does
-        NOT reuse RaffleUseCases.delete() — that blocks on any ticket with a
+        """System-wide sweep: permanently deletes every CLOSED raffle (and
+        its tickets) once it's been closed for at least ``grace_hours`` —
+        hard delete, same as the manual "Eliminar rifa" action, for one
+        consistent meaning of "deleted" across the app. Not owner-scoped,
+        same as publish_scheduled_raffles. Deliberately does NOT reuse
+        RaffleUseCases.delete() — that blocks on any ticket with a
         participant, which is the expected, common case for a concluded
         raffle; this is automatic post-raffle cleanup, not an accidental
-        delete to protect against."""
+        delete to protect against. One commit per raffle rather than
+        batching the whole sweep into a single transaction."""
         cutoff = utcnow() - timedelta(hours=grace_hours)
         candidates = await self._repository.list_closed_past_cutoff(cutoff=cutoff)
         cleaned: list[Raffle] = []
         for raffle in candidates:
-            await self._tickets.soft_delete_all_for_raffle(raffle.id)
-            await self._repository.soft_delete(raffle)
-            cleaned.append(raffle)
-        if cleaned:
+            if raffle.winner_ticket_id is not None:
+                raffle.winner_ticket_id = None
+                await self._repository.save(raffle)
+            await self._tickets.hard_delete_all_for_raffle(raffle.id)
+            await self._repository.hard_delete(raffle)
             await self._session.commit()
+            cleaned.append(raffle)
         return cleaned
 
     async def register_winner(

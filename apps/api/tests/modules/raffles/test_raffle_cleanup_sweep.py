@@ -76,10 +76,10 @@ async def test_sweep_deletes_a_raffle_closed_past_the_grace_period(session: Asyn
     cleaned = await _use_cases(session).cleanup_closed_raffles(grace_hours=GRACE_HOURS)
 
     assert [r.id for r in cleaned] == [raffle.id]
-    refreshed_raffle = await session.get(Raffle, raffle.id)
-    refreshed_ticket = await session.get(Ticket, ticket.id)
-    assert refreshed_raffle is not None and refreshed_raffle.deleted_at is not None
-    assert refreshed_ticket is not None and refreshed_ticket.deleted_at is not None
+    # Hard delete — the rows are actually gone, not soft-deleted.
+    session.expire_all()
+    assert await session.get(Raffle, raffle.id) is None
+    assert await session.get(Ticket, ticket.id) is None
 
 
 async def test_sweep_ignores_a_raffle_still_inside_the_grace_period(
@@ -107,8 +107,8 @@ async def test_sweep_ignores_a_published_raffle_with_an_unresolved_winner_attemp
 
 
 async def test_sweep_is_idempotent_on_retry(session: AsyncSession) -> None:
-    """A second run after the tickets/raffle are already soft-deleted must be
-    a safe no-op (list_closed_past_cutoff excludes already-deleted rows)."""
+    """A second run after the raffle is already gone must be a safe no-op
+    (list_closed_past_cutoff simply finds no matching row anymore)."""
     raffle, _ = await _seed_closed_raffle(
         session, closed_at=NOW - timedelta(hours=GRACE_HOURS, minutes=1)
     )
@@ -119,5 +119,6 @@ async def test_sweep_is_idempotent_on_retry(session: AsyncSession) -> None:
     second = await _use_cases(session).cleanup_closed_raffles(grace_hours=GRACE_HOURS)
     assert second == []
 
+    session.expire_all()
     remaining = await session.execute(select(Raffle).where(Raffle.id == raffle.id))
-    assert remaining.scalars().first() is not None  # soft-deleted, not gone
+    assert remaining.scalars().first() is None
