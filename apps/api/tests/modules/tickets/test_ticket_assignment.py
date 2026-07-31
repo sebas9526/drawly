@@ -20,21 +20,22 @@ def _ticket(status: TicketStatus = TicketStatus.AVAILABLE) -> Ticket:
 def test_assign_to_available_reserves_for_participant() -> None:
     participant = uuid.uuid4()
     ticket = TicketService.assign_participant(
-        _ticket(), participant_id=participant, now=NOW, ttl=TTL
+        _ticket(), participant_id=participant, now=NOW, expires_at=NOW + TTL
     )
     assert ticket.status is TicketStatus.RESERVED
     assert ticket.participant_id == participant
     assert ticket.reserved_at == NOW
+    assert ticket.expires_at == NOW + TTL
 
 
-def test_assign_with_no_ttl_never_expires() -> None:
-    """Regression: admin-assigned tickets (ttl=None) must not carry an
-    expires_at — they used to share the public flow's 48h TTL and get
-    silently released (with the participant/collaborator wiped) by the
-    reservation-expiry sweep."""
+def test_assign_without_a_known_draw_date_never_expires() -> None:
+    """Regression: a ticket's expires_at is the raffle's own draw_date — if
+    that's unknown (missing raffle), the assignment must not carry a made-up
+    expiry that could silently release it (with the participant/collaborator
+    wiped) via the reservation-expiry sweep."""
     participant = uuid.uuid4()
     ticket = TicketService.assign_participant(
-        _ticket(), participant_id=participant, now=NOW, ttl=None
+        _ticket(), participant_id=participant, now=NOW, expires_at=None
     )
     assert ticket.status is TicketStatus.RESERVED
     assert ticket.expires_at is None
@@ -46,7 +47,9 @@ def test_assign_to_reserved_changes_participant() -> None:
     ticket.reserved_at = NOW
     new_participant = uuid.uuid4()
 
-    TicketService.assign_participant(ticket, participant_id=new_participant, now=NOW, ttl=TTL)
+    TicketService.assign_participant(
+        ticket, participant_id=new_participant, now=NOW, expires_at=NOW + TTL
+    )
 
     assert ticket.status is TicketStatus.RESERVED
     assert ticket.participant_id == new_participant
@@ -55,7 +58,7 @@ def test_assign_to_reserved_changes_participant() -> None:
 def test_assign_to_paid_ticket_is_rejected() -> None:
     with pytest.raises(TicketImmutableError):
         TicketService.assign_participant(
-            _ticket(TicketStatus.PAID), participant_id=uuid.uuid4(), now=NOW, ttl=TTL
+            _ticket(TicketStatus.PAID), participant_id=uuid.uuid4(), now=NOW, expires_at=NOW + TTL
         )
 
 

@@ -91,6 +91,10 @@ async def test_assign_participant_to_multiple_tickets(api_client: AsyncClient) -
         body = response.json()["data"]
         assert body["status"] == "reserved"
         assert body["participant_id"] == pid
+        # Regression: this used to be set to a fixed 48h-from-now TTL and get
+        # silently released by the reservation sweep — it must track the
+        # raffle's own draw_date instead, which is weeks away here.
+        assert body["expires_at"] == "2026-08-01T19:00:00"
 
     history = await api_client.get(f"{API}/participants/{pid}/tickets")
     assert history.status_code == 200

@@ -32,6 +32,17 @@ class TicketRepository:
         status = result.scalars().first()
         return RaffleStatus(status) if status is not None else None
 
+    async def get_raffle_draw_date(self, raffle_id: uuid.UUID) -> datetime | None:
+        """The parent raffle's draw_date — used as a reservation's expires_at,
+        so an unpaid ticket is only released once the raffle is actually
+        about to be drawn, not on a short fixed timer. Same cross-module
+        read pattern as get_raffle_status. None if the raffle is missing."""
+        statement = select(Raffle.draw_date).where(
+            Raffle.id == raffle_id, col(Raffle.deleted_at).is_(None)
+        )
+        result = await self._session.execute(statement)
+        return result.scalars().first()
+
     async def add_all(self, tickets: Sequence[Ticket]) -> int:
         self._session.add_all(list(tickets))
         await self._session.flush()

@@ -13,10 +13,11 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
-    # Hours a ticket reservation stays valid; persisted as expires_at on reserve.
-    reservation_ttl_hours: int = 48
     # In-process sweep that releases expired reservations back to AVAILABLE (see
-    # app/modules/tickets/dependencies.sweep_expired_reservations). No external
+    # app/modules/tickets/dependencies.sweep_expired_reservations). An unpaid
+    # reservation's expires_at is the raffle's own draw_date (set on
+    # reserve/assign) — a held ticket is only released once the raffle itself
+    # is about to be drawn, never on a fixed short timer. No external
     # cron/queue required.
     reservation_sweep_enabled: bool = True
     reservation_sweep_interval_seconds: int = 60

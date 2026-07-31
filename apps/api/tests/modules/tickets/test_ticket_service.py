@@ -23,7 +23,9 @@ def _ticket(status: TicketStatus = TicketStatus.AVAILABLE) -> Ticket:
 
 def test_available_ticket_can_be_reserved() -> None:
     participant = uuid.uuid4()
-    ticket = TicketService.reserve(_ticket(), now=NOW, ttl=TTL, participant_id=participant)
+    ticket = TicketService.reserve(
+        _ticket(), now=NOW, expires_at=NOW + TTL, participant_id=participant
+    )
 
     assert ticket.status is TicketStatus.RESERVED
     assert ticket.participant_id == participant
@@ -31,8 +33,8 @@ def test_available_ticket_can_be_reserved() -> None:
     assert ticket.expires_at == NOW + TTL
 
 
-def test_reserving_with_no_ttl_never_expires() -> None:
-    ticket = TicketService.reserve(_ticket(), now=NOW, ttl=None, participant_id=uuid.uuid4())
+def test_reserving_without_a_known_draw_date_never_expires() -> None:
+    ticket = TicketService.reserve(_ticket(), now=NOW, expires_at=None, participant_id=uuid.uuid4())
 
     assert ticket.status is TicketStatus.RESERVED
     assert ticket.expires_at is None
@@ -40,12 +42,12 @@ def test_reserving_with_no_ttl_never_expires() -> None:
 
 def test_reserved_ticket_cannot_be_reserved_again() -> None:
     with pytest.raises(TicketNotAvailableError):
-        TicketService.reserve(_ticket(TicketStatus.RESERVED), now=NOW, ttl=TTL)
+        TicketService.reserve(_ticket(TicketStatus.RESERVED), now=NOW, expires_at=NOW + TTL)
 
 
 def test_paid_ticket_cannot_be_sold_twice() -> None:
     with pytest.raises(TicketNotAvailableError):
-        TicketService.reserve(_ticket(TicketStatus.PAID), now=NOW, ttl=TTL)
+        TicketService.reserve(_ticket(TicketStatus.PAID), now=NOW, expires_at=NOW + TTL)
 
 
 def test_cancellation_returns_ticket_to_available_and_clears_participant() -> None:

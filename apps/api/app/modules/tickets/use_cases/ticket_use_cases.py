@@ -1,11 +1,10 @@
 import uuid
 from collections.abc import Sequence
-from datetime import timedelta
+from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.database.base import utcnow
 from app.modules.raffles.services import TicketWinnerCandidate
 from app.modules.tickets.exceptions import (
@@ -54,15 +53,12 @@ class TicketUseCases:
         # collaborator crediting is skipped (e.g. raffle provisioning).
         self._collaborators = collaborators
 
-    @property
-    def _ttl(self) -> timedelta | None:
-        """None for admin-initiated actions (owner_id set) — an organizer
-        assigning/reserving a ticket is a deliberate, permanent act. Only the
-        public self-service flow (owner_id None) gets an anti-abandonment
-        timeout, so an unpaid customer reservation frees itself back up."""
-        if self._owner_id is not None:
-            return None
-        return timedelta(hours=get_settings().reservation_ttl_hours)
+    async def _reservation_expiry(self, raffle_id: uuid.UUID) -> datetime | None:
+        """An unpaid reservation's expires_at: the raffle's own draw_date, so
+        a held ticket is only released once the raffle is actually about to
+        be drawn — not on a short fixed timer (there can be weeks between
+        reserving a ticket and the draw). None if the raffle is missing."""
+        return await self._repository.get_raffle_draw_date(raffle_id)
 
     async def release_expired_reservations(self) -> list[Ticket]:
         """System-wide sweep: releases every RESERVED ticket whose TTL has
@@ -139,7 +135,7 @@ class TicketUseCases:
         self._service.reserve(
             ticket,
             now=utcnow(),
-            ttl=self._ttl,
+            expires_at=await self._reservation_expiry(ticket.raffle_id),
             participant_id=participant_id,
             collaborator_id=collaborator_id,
         )
@@ -195,7 +191,10 @@ class TicketUseCases:
         ticket = await self.get_ticket(ticket_id)
         self._service.ensure_raffle_open(await self._repository.get_raffle_status(ticket.raffle_id))
         self._service.assign_participant(
-            ticket, participant_id=participant_id, now=utcnow(), ttl=self._ttl
+            ticket,
+            participant_id=participant_id,
+            now=utcnow(),
+            expires_at=await self._reservation_expiry(ticket.raffle_id),
         )
         try:
             saved = await self._repository.save(ticket)
