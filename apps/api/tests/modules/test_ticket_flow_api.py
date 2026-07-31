@@ -123,7 +123,10 @@ async def test_reserve_then_reserve_again_conflicts(api_client: AsyncClient) -> 
     first = await api_client.patch(f"{API}/tickets/{ticket_id}/reserve", json={})
     assert first.status_code == 200
     assert first.json()["data"]["status"] == "reserved"
-    assert first.json()["data"]["expires_at"] is not None
+    # Admin-initiated reservations don't auto-expire (only public/customer
+    # reservations do) — a deliberate action by the organizer shouldn't
+    # silently revert.
+    assert first.json()["data"]["expires_at"] is None
 
     second = await api_client.patch(f"{API}/tickets/{ticket_id}/reserve", json={})
     assert second.status_code == 409

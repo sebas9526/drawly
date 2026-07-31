@@ -46,20 +46,23 @@ class TicketService:
         ticket: Ticket,
         *,
         now: datetime,
-        ttl: timedelta,
+        ttl: timedelta | None,
         participant_id: uuid.UUID | None = None,
         collaborator_id: uuid.UUID | None = None,
     ) -> Ticket:
         """AVAILABLE -> RESERVED. A reserved/paid ticket cannot be reserved
         again (no double reservation, no double sale). ``collaborator_id`` credits
-        the seller of the reservation (optional)."""
+        the seller of the reservation (optional). ``ttl=None`` means the
+        reservation never auto-expires (the admin path: an organizer
+        recording who holds a ticket is a deliberate, permanent act — only
+        the public self-service flow needs an anti-abandonment timeout)."""
         if ticket.status is not TicketStatus.AVAILABLE:
             raise TicketNotAvailableError()
         ticket.status = TicketStatus.RESERVED
         ticket.participant_id = participant_id
         ticket.collaborator_id = collaborator_id
         ticket.reserved_at = now
-        ticket.expires_at = now + ttl
+        ticket.expires_at = now + ttl if ttl is not None else None
         return ticket
 
     @classmethod
@@ -96,7 +99,7 @@ class TicketService:
         *,
         participant_id: uuid.UUID,
         now: datetime,
-        ttl: timedelta,
+        ttl: timedelta | None,
     ) -> Ticket:
         """Assign or change the participant on a ticket.
 

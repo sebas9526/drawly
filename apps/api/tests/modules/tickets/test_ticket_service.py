@@ -31,6 +31,13 @@ def test_available_ticket_can_be_reserved() -> None:
     assert ticket.expires_at == NOW + TTL
 
 
+def test_reserving_with_no_ttl_never_expires() -> None:
+    ticket = TicketService.reserve(_ticket(), now=NOW, ttl=None, participant_id=uuid.uuid4())
+
+    assert ticket.status is TicketStatus.RESERVED
+    assert ticket.expires_at is None
+
+
 def test_reserved_ticket_cannot_be_reserved_again() -> None:
     with pytest.raises(TicketNotAvailableError):
         TicketService.reserve(_ticket(TicketStatus.RESERVED), now=NOW, ttl=TTL)

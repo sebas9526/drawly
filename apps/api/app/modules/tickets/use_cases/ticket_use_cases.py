@@ -55,7 +55,13 @@ class TicketUseCases:
         self._collaborators = collaborators
 
     @property
-    def _ttl(self) -> timedelta:
+    def _ttl(self) -> timedelta | None:
+        """None for admin-initiated actions (owner_id set) — an organizer
+        assigning/reserving a ticket is a deliberate, permanent act. Only the
+        public self-service flow (owner_id None) gets an anti-abandonment
+        timeout, so an unpaid customer reservation frees itself back up."""
+        if self._owner_id is not None:
+            return None
         return timedelta(hours=get_settings().reservation_ttl_hours)
 
     async def release_expired_reservations(self) -> list[Ticket]:
